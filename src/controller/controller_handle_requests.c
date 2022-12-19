@@ -204,6 +204,7 @@ void handle_requests(struct controller *controller) {
     args[i].controller = controller;
 
     int ret = pthread_create(&threads[i], NULL, handler, &args[i]);
+    (void)ret;
     assert(ret == 0);
   }
 

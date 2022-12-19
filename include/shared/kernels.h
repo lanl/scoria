@@ -173,16 +173,24 @@ FORCE_INLINE void write_single_thread_0(double *buffer, const double *input,
 FORCE_INLINE void write_single_thread_1(double *buffer, const double *input,
                                         size_t N, const size_t *ind1,
                                         bool use_avx) {
-  for (size_t i = 0; i < N; ++i) {
-    buffer[ind1[i]] = input[i];
+  if (use_avx) {
+    WRITE_1_AVX(buffer, input, ind1, 0, N);
+  } else {
+    for (size_t i = 0; i < N; ++i) {
+      buffer[ind1[i]] = input[i];
+    }
   }
 }
 
 FORCE_INLINE void write_single_thread_2(double *buffer, const double *input,
                                         size_t N, const size_t *ind1,
                                         const size_t *ind2, bool use_avx) {
-  for (size_t i = 0; i < N; ++i) {
-    buffer[ind2[ind1[i]]] = input[i];
+  if (use_avx) {
+    WRITE_2_AVX(buffer, input, ind1, ind2, 0, N);
+  } else {
+    for (size_t i = 0; i < N; ++i) {
+      buffer[ind2[ind1[i]]] = input[i];
+    }
   }
 }
 
@@ -329,7 +337,8 @@ void *write_th_0_avx(void *args) {
 FORCE_INLINE void write_multi_thread_0(double *buffer, const double *input,
                                        size_t N, size_t n_threads,
                                        bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, write_th_args_0, write_th_0,
+  THREAD_TEMPLATE(N, n_threads, write_th_args_0,
+                  use_avx ? write_th_0_avx : write_th_0,
                   { args[i].input = input; });
 }
 
@@ -357,10 +366,11 @@ void *write_th_1_avx(void *args) {
 FORCE_INLINE
 void write_multi_thread_1(double *buffer, const double *input, size_t N,
                           const size_t *ind1, size_t n_threads, bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, write_th_args_1, write_th_1, {
-    args[i].input = input;
-    args[i].ind1 = ind1;
-  });
+  THREAD_TEMPLATE(N, n_threads, write_th_args_1,
+                  use_avx ? write_th_1_avx : write_th_1, {
+                    args[i].input = input;
+                    args[i].ind1 = ind1;
+                  });
 }
 
 struct write_th_args_2 {
@@ -388,9 +398,10 @@ FORCE_INLINE void write_multi_thread_2(double *buffer, const double *input,
                                        size_t N, const size_t *ind1,
                                        const size_t *ind2, size_t n_threads,
                                        bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, write_th_args_2, write_th_2, {
-    args[i].input = input;
-    args[i].ind1 = ind1;
-    args[i].ind2 = ind2;
-  });
+  THREAD_TEMPLATE(N, n_threads, write_th_args_2,
+                  use_avx ? write_th_2_avx : write_th_2, {
+                    args[i].input = input;
+                    args[i].ind1 = ind1;
+                    args[i].ind2 = ind2;
+                  });
 }
