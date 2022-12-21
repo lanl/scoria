@@ -1,3 +1,18 @@
+# Custom
+*~
+build*/
+debug*/
+scripts/
+compile_commands.json
+.clangd/
+shm_malloc/*.o
+shm_malloc/*.a
+shm_malloc/tanon
+shm_malloc/tshm1
+shm_malloc/tshm1db
+shm_malloc/tshm2
+shm_malloc/tshm2db
+
 # Prerequisites
 *.d
 
