@@ -16,7 +16,7 @@ void cleanup_queues(struct client *client) {
 
 void cleanup_shared_mem(struct client *client) {
   scoria_sm_unmap(client->shared_location, sizeof(struct memory_location),
-              "client:unmap");
+                  "client:unmap");
 
   close(client->fd_location);
   close(client->fd_requests);

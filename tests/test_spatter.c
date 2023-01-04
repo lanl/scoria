@@ -25,15 +25,41 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  if (rc[0].kernel != GATHER && rc[0].kernel != SCATTER && rc[0].kernel != GS) {
+  if (rc[0].kernel != GATHER && rc[0].kernel != SCATTER &&
+      rc[0].kernel != MULTIGATHER && rc[0].kernel != MULTISCATTER) {
     printf("Error: Unsupported kernel\n");
     exit(1);
   }
 
   size_t max_pattern_val = 0;
 
-  for (int i = 0; i < nrc; i++)
-    max_pattern_val = remap_pattern(nrc, rc[i].pattern, rc[i].pattern_len);
+  for (int i = 0; i < nrc; i++) {
+    if (rc[i].kernel == MULTISCATTER) {
+      size_t max_pattern_val_outer =
+          remap_pattern(nrc, rc[i].pattern, rc[i].pattern_len);
+      size_t max_pattern_val_inner =
+          remap_pattern(nrc, rc[i].pattern_scatter, rc[i].pattern_scatter_len);
+
+      assert(rc[i].pattern_len > max_pattern_val_inner);
+
+      max_pattern_val = max_pattern_val_outer >= max_pattern_val_inner
+                            ? max_pattern_val_outer
+                            : max_pattern_val_inner;
+    } else if (rc[i].kernel == MULTIGATHER) {
+      size_t max_pattern_val_outer =
+          remap_pattern(nrc, rc[i].pattern, rc[i].pattern_len);
+      size_t max_pattern_val_inner =
+          remap_pattern(nrc, rc[i].pattern_gather, rc[i].pattern_gather_len);
+
+      assert(rc[i].pattern_len > max_pattern_val_inner);
+
+      max_pattern_val = max_pattern_val_outer >= max_pattern_val_inner
+                            ? max_pattern_val_outer
+                            : max_pattern_val_inner;
+    } else {
+      max_pattern_val = remap_pattern(nrc, rc[i].pattern, rc[i].pattern_len);
+    }
+  }
 
   printf("max pattern val: %d\n", max_pattern_val);
 
@@ -58,26 +84,63 @@ int main(int argc, char **argv) {
       for (size_t k = 0; k < N; k++)
         pattern[k] = (size_t)rc[i].pattern[k];
 
+      struct request req;
+
       switch (rc[i].kernel) {
-      case SCATTER:
+      case MULTISCATTER: {
+        size_t M = rc[i].pattern_scatter_len;
+
+        printf("MultiScatter with Outer Length: %d and Inner Length: %d\n", N,
+               M);
+
+        size_t *pattern_scatter = shm_malloc(M * sizeof(size_t));
+        for (size_t k = 0; k < M; k++)
+          pattern_scatter[k] = (size_t)rc[i].pattern_scatter[k];
+
+        scoria_write(&client, res, M, input, pattern, pattern_scatter, 0, 0,
+                     &req);
+        wait_request(&client, &req);
+
+        shm_free(pattern_scatter);
+        break;
+      }
+      case MULTIGATHER: {
+        size_t M = rc[i].pattern_gather_len;
+
+        printf("MultiGahter with Outer Length: %d and Inner Length: %d\n", N,
+               M);
+
+        size_t *pattern_gather = shm_malloc(M * sizeof(size_t));
+        for (size_t k = 0; k < M; k++)
+          pattern_gather[k] = (size_t)rc[i].pattern_gather[k];
+
+        scoria_read(&client, res, M, input, pattern, pattern_gather, 0, 0,
+                    &req);
+        wait_request(&client, &req);
+
+        shm_free(pattern_gather);
+        break;
+      }
+      case SCATTER: {
         printf("Scatter with Length: %d\n", N);
 
-        struct request write_req;
-        scoria_write(&client, res, N, input, pattern, NULL, 0, 0, &write_req);
-        wait_request(&client, &write_req);
+        scoria_write(&client, res, N, input, pattern, NULL, 0, 0, &req);
+        wait_request(&client, &req);
 
         break;
-      case GATHER:
+      }
+      case GATHER: {
         printf("Gather with Length: %d\n", N);
 
-        struct request read_req;
-        scoria_read(&client, input, N, res, pattern, NULL, 0, 0, &read_req);
-        wait_request(&client, &read_req);
+        scoria_read(&client, input, N, res, pattern, NULL, 0, 0, &req);
+        wait_request(&client, &req);
 
         break;
-      default:
+      }
+      default: {
         printf("Error: Unable to determine kernel\n");
         break;
+      }
       }
 
       shm_free(res);
