@@ -4,7 +4,7 @@
 #include "client_cleanup.h"
 #include "client_init.h"
 #include "client_memory.h"
-#include "client_place_requests.h"
+#include "client_wait_requests.h"
 #include "config.h"
 #include "parse-args.h"
 #include "shm_malloc.h"
