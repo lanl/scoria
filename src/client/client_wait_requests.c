@@ -60,4 +60,3 @@ void wait_requests(struct client *client, struct request *reqs,
   for (size_t i = 0; i < num_reqs; ++i)
     wait_request(client, &reqs[i]);
 }
-
