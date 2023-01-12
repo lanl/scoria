@@ -10,7 +10,7 @@
 #include "client_cleanup.h"
 #include "client_init.h"
 #include "client_memory.h"
-#include "client_place_requests.h"
+#include "client_wait_requests.h"
 #include "config.h"
 #include "kernels.h"
 #include "shm_malloc.h"
@@ -602,12 +602,11 @@ int main(int argc, char **argv) {
 
 #ifdef USE_CLIENT
   // send quit request
-  // struct request quit_req;
-  // quit_req.client = client_id;
-  // quit_req.r_type = Quit;
-  // quit_req.id = ++req_id;
-  // scoria_put_request(&client, &quit_req);
-  // wait_request(&client, &quit_req);
+  struct request quit_req;
+  quit_req.r_type = Quit;
+  quit_req.id = ++req_id;
+  scoria_put_request(&client, &quit_req);
+  wait_request(&client, &quit_req);
 
   cleanup(&client);
 #endif
