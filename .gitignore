@@ -2,7 +2,7 @@
 *~
 build*/
 debug*/
-scripts/
+utils/
 compile_commands.json
 .clangd/
 shm_malloc/*.o
