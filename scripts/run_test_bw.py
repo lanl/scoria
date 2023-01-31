@@ -9,7 +9,7 @@ def kill_process(process):
 def run_test_bw(fnames):
     with contextlib.ExitStack() as stack:
         processes = []
-        for program, outfile in zip(['./build/controller', './build/tests/test_client'], fnames):
+        for program, outfile in zip(['./build/scoria', './build/tests/test_client'], fnames):
             if outfile:
                 with open(outfile, "w") as f:
                     processes.append(stack.enter_context(subprocess.Popen(program, stdout=f)))
