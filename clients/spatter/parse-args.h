@@ -48,7 +48,7 @@ LANL and GT), this list of conditions and the following disclaimer.
 #define STRING_SIZE 1000000
 #define MAX_PATTERN_LEN 1048576
 
-#include <sgtype.h>
+#include "sgtype.h"
 #include <stdint.h>
 #include <sys/types.h>
 

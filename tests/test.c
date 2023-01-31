@@ -10,7 +10,7 @@
 #include "client_cleanup.h"
 #include "client_init.h"
 #include "client_memory.h"
-#include "client_place_requests.h"
+#include "client_wait_requests.h"
 #include "config.h"
 #include "kernels.h"
 #include "shm_malloc.h"
@@ -598,7 +598,9 @@ int main(int argc, char **argv) {
   printf(" A|noA: with or without aliases\n\n");
 
   run_benchmarks(N, cluster_size, alias_fraction, false);
+#ifdef USE_AVX
   run_benchmarks(N, cluster_size, alias_fraction, true);
+#endif /* USE_AVX */
 
 #ifdef USE_CLIENT
   // send quit request
