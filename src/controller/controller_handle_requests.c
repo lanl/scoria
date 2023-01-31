@@ -36,6 +36,9 @@ void controller_status(c_status stat, struct request *req) {
   case SCORIA_SVE_WRITE_FAIL:
     printf("Controller: Client(%d): Error: SVE write error\n", req->client);
     break;
+  case SCORIA_INTRINSIC_EXIST:
+    printf("Controller: Client(%d): Error: Unrecognized intrinsic type\n", req->client);
+    break;
   default:
     printf("Controller: Client(%d): Error: Unknown status code %d\n",
            req->client, stat);
@@ -55,10 +58,10 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     assert(req->ind2 == NULL);
     if (req->nthreads == 0) {
       stat =
-          read_single_thread_0(req->output, req->input, req->N, req->use_avx);
+          read_single_thread_0(req->output, req->input, req->N, req->intrinsics);
     } else {
       stat = read_multi_thread_0(req->output, req->input, req->N, req->nthreads,
-                                 req->use_avx);
+                                 req->intrinsics);
     }
 
     req->r_status = Ready;
@@ -79,10 +82,10 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     assert(req->ind1 != NULL);
     if (req->nthreads == 0) {
       stat = read_single_thread_1(req->output, req->input, req->N, req->ind1,
-                                  req->use_avx);
+                                  req->intrinsics);
     } else {
       stat = read_multi_thread_1(req->output, req->input, req->N, req->ind1,
-                                 req->nthreads, req->use_avx);
+                                 req->nthreads, req->intrinsics);
     }
 
     req->r_status = Ready;
@@ -104,10 +107,10 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
 
   if (req->nthreads == 0) {
     stat = read_single_thread_2(req->output, req->input, req->N, req->ind1,
-                                req->ind2, req->use_avx);
+                                req->ind2, req->intrinsics);
   } else {
     stat = read_multi_thread_2(req->output, req->input, req->N, req->ind1,
-                               req->ind2, req->nthreads, req->use_avx);
+                               req->ind2, req->nthreads, req->intrinsics);
   }
 
   req->r_status = Ready;
@@ -138,10 +141,10 @@ c_status handle_write(struct controller *controller,
     assert(req->ind2 == NULL);
     if (req->nthreads == 0) {
       stat =
-          write_single_thread_0(req->output, req->input, req->N, req->use_avx);
+          write_single_thread_0(req->output, req->input, req->N, req->intrinsics);
     } else {
       stat = write_multi_thread_0(req->output, req->input, req->N,
-                                  req->nthreads, req->use_avx);
+                                  req->nthreads, req->intrinsics);
     }
 
     req->r_status = Ready;
@@ -163,10 +166,10 @@ c_status handle_write(struct controller *controller,
     assert(req->ind1 != NULL);
     if (req->nthreads == 0) {
       stat = write_single_thread_1(req->output, req->input, req->N, req->ind1,
-                                   req->use_avx);
+                                   req->intrinsics);
     } else {
       stat = write_multi_thread_1(req->output, req->input, req->N, req->ind1,
-                                  req->nthreads, req->use_avx);
+                                  req->nthreads, req->intrinsics);
     }
 
     req->r_status = Ready;
@@ -189,10 +192,10 @@ c_status handle_write(struct controller *controller,
 
   if (req->nthreads == 0) {
     stat = write_single_thread_2(req->output, req->input, req->N, req->ind1,
-                                 req->ind2, req->use_avx);
+                                 req->ind2, req->intrinsics);
   } else {
     stat = write_multi_thread_2(req->output, req->input, req->N, req->ind1,
-                                req->ind2, req->nthreads, req->use_avx);
+                                req->ind2, req->nthreads, req->intrinsics);
   }
 
   req->r_status = Ready;

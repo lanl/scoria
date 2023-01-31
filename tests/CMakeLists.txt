@@ -7,7 +7,7 @@ if(Scoria_REQUIRE_AVX)
   target_compile_definitions(test_client PUBLIC USE_AVX)
 endif()
 if(Scoria_REQUIRE_SVE)
-  message(FATAL_ERROR "Scoria does not have SVE support at this time")
+  target_compile_definitions(test_client PUBLIC USE_SVE)
 endif()
 
 target_compile_definitions(test_client PUBLIC USE_CLIENT)

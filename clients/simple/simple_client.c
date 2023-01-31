@@ -27,7 +27,7 @@ void place_requests(struct client *client) {
   }
 
   struct request req1;
-  scoria_write(client, A, 1024, input, NULL, NULL, 0, 0, &req1);
+  scoria_write(client, A, 1024, input, NULL, NULL, 0, NONE, &req1);
   wait_request(client, &req1);
   shm_free(input);
 
@@ -37,7 +37,7 @@ void place_requests(struct client *client) {
   double *output = shm_malloc(1024 * sizeof(double));
 
   struct request req2;
-  scoria_read(client, A, 1024, output, NULL, NULL, 0, 0, &req2);
+  scoria_read(client, A, 1024, output, NULL, NULL, 0, NONE, &req2);
   wait_request(client, &req2);
 
   for (size_t i = 0; i < 1024; ++i)
