@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 project(shm_malloc C)
 
 add_library(shm STATIC malloc.c malloc.h)

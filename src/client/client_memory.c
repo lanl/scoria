@@ -33,7 +33,7 @@ void scoria_quit(struct client *client, struct request *req) {
   scoria_put_request(client, req);
 }
 
-void scoria_read(struct client *client, void *buffer, const size_t N,
+void scoria_read(struct client *client, const void *buffer, const size_t N,
                  void *output, const size_t *ind1, const size_t *ind2,
                  size_t num_threads, bool use_avx, struct request *req) {
   if (client->chatty)
@@ -59,7 +59,7 @@ void scoria_read(struct client *client, void *buffer, const size_t N,
 }
 
 void scoria_write(struct client *client, void *buffer, const size_t N,
-                  void *input, const size_t *ind1, const size_t *ind2,
+                  const void *input, const size_t *ind1, const size_t *ind2,
                   size_t num_threads, bool use_avx, struct request *req) {
   if (client->chatty)
     printf("Client(%d): Writing Buffer\n", client->id);
