@@ -598,7 +598,9 @@ int main(int argc, char **argv) {
   printf(" A|noA: with or without aliases\n\n");
 
   run_benchmarks(N, cluster_size, alias_fraction, false);
+#ifdef USE_AVX
   run_benchmarks(N, cluster_size, alias_fraction, true);
+#endif /* USE_AVX */
 
 #ifdef USE_CLIENT
   // send quit request

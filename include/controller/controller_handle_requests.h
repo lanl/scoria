@@ -9,10 +9,12 @@ struct thread_args {
   struct controller *controller;
 };
 
-void handle_read(struct controller *controller, struct request_queue *queue,
-                 struct request *req);
-void handle_write(struct controller *controller, struct request_queue *queue,
-                  struct request *req);
+void controller_status(c_status stat, struct request *req);
+
+c_status handle_read(struct controller *controller, struct request_queue *queue,
+                     struct request *req);
+c_status handle_write(struct controller *controller,
+                      struct request_queue *queue, struct request *req);
 
 void *handler(void *args);
 void handle_requests(struct controller *controller);

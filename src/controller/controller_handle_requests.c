@@ -13,141 +13,201 @@
 int quit = 0;
 int tid = -1;
 
-void handle_read(struct controller *controller, struct request_queue *queue,
-                 struct request *req) {
+void controller_status(c_status stat, struct request *req) {
+  switch (stat) {
+  case SCORIA_SUCCESS:
+    printf("Controller: Client(%d): Error: No error\n", req->client);
+    break;
+  case SCORIA_SCALAR_READ_FAIL:
+    printf("Controller: Client(%d): Error: Scalar read error\n", req->client);
+    break;
+  case SCORIA_SCALAR_WRITE_FAIL:
+    printf("Controller: Client(%d): Error: Scalar write error\n", req->client);
+    break;
+  case SCORIA_AVX_READ_FAIL:
+    printf("Controller: Client(%d): Error: AVX read error\n", req->client);
+    break;
+  case SCORIA_AVX_WRITE_FAIL:
+    printf("Controller: Client(%d): Error: AVX write error\n", req->client);
+    break;
+  case SCORIA_SVE_READ_FAIL:
+    printf("Controller: Client(%d): Error: SVE read error\n", req->client);
+    break;
+  case SCORIA_SVE_WRITE_FAIL:
+    printf("Controller: Client(%d): Error: SVE write error\n", req->client);
+    break;
+  default:
+    printf("Controller: Client(%d): Error: Unknown status code %d\n",
+           req->client, stat);
+  }
+}
+
+c_status handle_read(struct controller *controller, struct request_queue *queue,
+                     struct request *req) {
   if (controller->chatty)
     printf("Controller: Received Request Object: Client: %d ID: %d Type: %d N: "
            "%ld\n",
            req->client, req->id, req->r_type, req->N);
 
+  c_status stat = SCORIA_SUCCESS;
+
   if (req->ind1 == NULL) {
     assert(req->ind2 == NULL);
     if (req->nthreads == 0) {
-      read_single_thread_0(req->output, req->input, req->N, req->use_avx);
+      stat =
+          read_single_thread_0(req->output, req->input, req->N, req->use_avx);
     } else {
-      read_multi_thread_0(req->output, req->input, req->N, req->nthreads,
-                          req->use_avx);
+      stat = read_multi_thread_0(req->output, req->input, req->N, req->nthreads,
+                                 req->use_avx);
     }
 
     req->r_status = Ready;
 
     request_queue_put(queue, req);
 
-    if (controller->chatty)
-      printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
-             req->N);
-
-    return;
+    if (stat != SCORIA_SUCCESS) {
+      controller_status(stat, req);
+    } else {
+      if (controller->chatty)
+        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
+               req->N);
+    }
+    return stat;
   }
 
   if (req->ind2 == NULL) {
     assert(req->ind1 != NULL);
     if (req->nthreads == 0) {
-      read_single_thread_1(req->output, req->input, req->N, req->ind1,
-                           req->use_avx);
+      stat = read_single_thread_1(req->output, req->input, req->N, req->ind1,
+                                  req->use_avx);
     } else {
-      read_multi_thread_1(req->output, req->input, req->N, req->ind1,
-                          req->nthreads, req->use_avx);
+      stat = read_multi_thread_1(req->output, req->input, req->N, req->ind1,
+                                 req->nthreads, req->use_avx);
     }
 
     req->r_status = Ready;
 
     request_queue_put(queue, req);
 
-    if (controller->chatty)
-      printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
-             req->N);
-
-    return;
+    if (stat != SCORIA_SUCCESS) {
+      controller_status(stat, req);
+    } else {
+      if (controller->chatty)
+        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
+               req->N);
+    }
+    return stat;
   }
 
   assert(req->ind1 != NULL);
   assert(req->ind2 != NULL);
 
   if (req->nthreads == 0) {
-    read_single_thread_2(req->output, req->input, req->N, req->ind1, req->ind2,
-                         req->use_avx);
+    stat = read_single_thread_2(req->output, req->input, req->N, req->ind1,
+                                req->ind2, req->use_avx);
   } else {
-    read_multi_thread_2(req->output, req->input, req->N, req->ind1, req->ind2,
-                        req->nthreads, req->use_avx);
+    stat = read_multi_thread_2(req->output, req->input, req->N, req->ind1,
+                               req->ind2, req->nthreads, req->use_avx);
   }
 
   req->r_status = Ready;
 
   request_queue_put(queue, req);
 
-  if (controller->chatty)
-    printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
-           req->N);
+  if (stat != SCORIA_SUCCESS) {
+    controller_status(stat, req);
+  } else {
+    if (controller->chatty)
+      printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
+             req->N);
+  }
+  return stat;
 }
 
-void handle_write(struct controller *controller, struct request_queue *queue,
-                  struct request *req) {
+c_status handle_write(struct controller *controller,
+                      struct request_queue *queue, struct request *req) {
   if (controller->chatty)
     printf("Controller: Received Request Object: Client: %d ID: %d Type: %d "
            "Pointer: %p Input Pointer: %p N: %ld\n",
            req->client, req->id, req->r_type, (void *)req->output,
            (void *)req->input, req->N);
 
+  c_status stat = SCORIA_SUCCESS;
+
   if (req->ind1 == NULL) {
     assert(req->ind2 == NULL);
     if (req->nthreads == 0) {
-      write_single_thread_0(req->output, req->input, req->N, req->use_avx);
+      stat =
+          write_single_thread_0(req->output, req->input, req->N, req->use_avx);
     } else {
-      write_multi_thread_0(req->output, req->input, req->N, req->nthreads,
-                           req->use_avx);
+      stat = write_multi_thread_0(req->output, req->input, req->N,
+                                  req->nthreads, req->use_avx);
     }
 
     req->r_status = Ready;
 
     request_queue_put(queue, req);
 
-    if (controller->chatty)
-      printf("Controller: Client(%d) Wrote Data with N: %ld\n", req->client,
-             req->N);
+    if (stat != SCORIA_SUCCESS) {
+      controller_status(stat, req);
+    } else {
+      if (controller->chatty)
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
+               req->N);
+    }
 
-    return;
+    return stat;
   }
 
   if (req->ind2 == NULL) {
     assert(req->ind1 != NULL);
     if (req->nthreads == 0) {
-      write_single_thread_1(req->output, req->input, req->N, req->ind1,
-                            req->use_avx);
+      stat = write_single_thread_1(req->output, req->input, req->N, req->ind1,
+                                   req->use_avx);
     } else {
-      write_multi_thread_1(req->output, req->input, req->N, req->ind1,
-                           req->nthreads, req->use_avx);
+      stat = write_multi_thread_1(req->output, req->input, req->N, req->ind1,
+                                  req->nthreads, req->use_avx);
     }
 
     req->r_status = Ready;
 
     request_queue_put(queue, req);
 
-    if (controller->chatty)
-      printf("Controller: Client(%d) Wrote Data with N: %ld\n", req->client,
-             req->N);
+    if (stat != SCORIA_SUCCESS) {
+      controller_status(stat, req);
+    } else {
+      if (controller->chatty)
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
+               req->N);
+    }
 
-    return;
+    return stat;
   }
 
   assert(req->ind1 != NULL);
   assert(req->ind2 != NULL);
 
   if (req->nthreads == 0) {
-    write_single_thread_2(req->output, req->input, req->N, req->ind1, req->ind2,
-                          req->use_avx);
+    stat = write_single_thread_2(req->output, req->input, req->N, req->ind1,
+                                 req->ind2, req->use_avx);
   } else {
-    write_multi_thread_2(req->output, req->input, req->N, req->ind1, req->ind2,
-                         req->nthreads, req->use_avx);
+    stat = write_multi_thread_2(req->output, req->input, req->N, req->ind1,
+                                req->ind2, req->nthreads, req->use_avx);
   }
 
   req->r_status = Ready;
 
   request_queue_put(queue, req);
 
-  if (controller->chatty)
-    printf("Controller: Client(%d) Wrote Data with N: %ld\n", req->client,
-           req->N);
+  if (stat != SCORIA_SUCCESS) {
+    controller_status(stat, req);
+  } else {
+    if (controller->chatty)
+      printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
+             req->N);
+  }
+
+  return stat;
 }
 
 void *handler(void *args) {
@@ -161,6 +221,7 @@ void *handler(void *args) {
   struct request_queue *completions =
       &(controller->shared_completions_list->queues[i]);
 
+  c_status stat = SCORIA_SUCCESS;
   while (!quit) {
     struct request req;
     request_queue_fetch(requests, &req);
@@ -170,10 +231,10 @@ void *handler(void *args) {
 
     switch (req.r_type) {
     case Read:
-      handle_read(controller, completions, &req);
+      stat = handle_read(controller, completions, &req);
       break;
     case Write:
-      handle_write(controller, completions, &req);
+      stat = handle_write(controller, completions, &req);
       break;
     case Quit:
       tid = i;
@@ -187,6 +248,12 @@ void *handler(void *args) {
     default:
       printf("Controller: Client (%ld): Invalid Request Type Detected\n", i);
       tid = i;
+      quit = 1;
+    }
+
+    if (stat != SCORIA_SUCCESS) {
+      printf("Controller: Error detected\n");
+      printf("Quitting...\n");
       quit = 1;
     }
   }
