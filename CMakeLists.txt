@@ -32,7 +32,7 @@ endif()
 
 if(Scoria_REQUIRE_SVE)
   message(STATUS "Building with SVE support")
-  add_compile_options(-march=armv8.2-a)
+  #add_compile_options(-march=armv8.2-a)
   add_compile_definitions(USE_SVE)
 else()
   message(STATUS "Building without SVE support")
