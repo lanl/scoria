@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "client.h"
 #include "client_cleanup.h"
@@ -560,16 +561,22 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
 }
 
 int main(int argc, char **argv) {
-  // Suppress Compiler Warnings
-  (void)argc;
-  (void)argv;
+  size_t N;
+  if (argc != 2) {
+    printf( "usage: %s size\n", argv[0] );
+    exit(1);
+  }
+  else {
+    char *nptr;
+    N = (size_t)strtoumax(argv[1], &nptr, 10);
+    printf("Running with double buffer of length: %zu\n", N);
+  }
 
-  size_t N = 1024 * 1024;
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
 
 #ifdef USE_CLIENT
-  printf("Running tests using the memory controller, which must be started "
+  printf("Running using the memory controller, which must be started "
          "before this executable is run\n");
   client.chatty = 0;
   init(&client);

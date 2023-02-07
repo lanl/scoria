@@ -12,40 +12,45 @@ def plot_test_bw(in_file, out_file):
 
     with open(in_file) as f:
         df = pd.DataFrame()
+        
+        not_started = True
         next_is_header = False
 
-        for _ in range(9):
-            next(f)
         for line in f:
-            if "Running tests" in line:
-                next_is_header = True
-
-                titles.append(line)
-            elif next_is_header:
-                next_is_header = False
-
-                line = line.split()
-                tmp = line[0]
-                line = np.repeat(line[1:], 2)
-                line = [line[i] + '(R)' if i % 2 == 0 else line[i] + '(W)' for i in range(len(line))]
-                line = np.concatenate((tmp, line), axis=None)
-
-                df = pd.DataFrame(columns=line)
-            elif line == '\n':
-                dfs.append(df)
+            if not_started:
+                if "Running tests" in line:
+                    not_started = False
+                    next_is_header = True
+                    titles.append(line)
             else:
-                line = line.split()
+                if "Running tests" in line:
+                    if not df.empty:
+                        dfs.append(df)
+                    next_is_header = True
+                    titles.append(line)
+                elif next_is_header:
+                    next_is_header = False
 
-                line = [line[i] for i in range(0, len(line)) if (i + 1) % 3 != 0]
-                line = line[:len(df.columns)]
-                line = [float(val) for  val in line]
+                    line = line.split()
+                    tmp = line[0]
+                    line = np.repeat(line[1:], 2)
+                    line = [line[i] + '(R)' if i % 2 == 0 else line[i] + '(W)' for i in range(len(line))]
+                    line = np.concatenate((tmp, line), axis=None)
 
-                df.loc[len(df.index)] = line
+                    df = pd.DataFrame(columns=line)
+                else:
+                    line = line.split()
 
+                    if len(line) > 0:
+                        line = [line[i] for i in range(0, len(line)) if (i + 1) % 3 != 0]
+                        line = line[:len(df.columns)]
+                        line = [float(val) for  val in line]
+
+                        df.loc[len(df.index)] = line
         dfs.append(df)
 
     for df, title in zip(dfs, titles):
-        print(title, df)
+        #print(title, df)
 
         fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(16, 10))
 
@@ -67,5 +72,5 @@ def plot_test_bw(in_file, out_file):
 
         plt.tight_layout()
 
-        figname = title.replace(' ', '_').strip() + '_' + out_file
+        figname = title.replace(' ', '_').strip()[3:] + '_' + out_file
         plt.savefig(figname)
