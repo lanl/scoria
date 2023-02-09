@@ -6,8 +6,13 @@
 #define SHARED_REQUESTS_NAME "/mem-request-queue"
 #define SHARED_COMPLETIONS_NAME "/mem-completion-queue"
 
+#if !defined(REQUEST_QUEUE_SIZE)
 #define REQUEST_QUEUE_SIZE 100
-#define MAX_CLIENTS 64
+#endif
+
+#if !defined MAX_CLIENTS
+#define MAX_CLIENTS 1
+#endif
 
 struct list {
   struct list *next;
