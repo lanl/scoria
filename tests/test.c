@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "client.h"
 #include "client_cleanup.h"
@@ -483,6 +484,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   return all_pass;
 }
 
+#define NUM_THREAD_VARS 8
 void benchmark(size_t N, size_t cluster_size, double alias_fraction,
                size_t num_threads, i_type intrinsics) {
   size_t num_runs = 5;
@@ -537,7 +539,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
 }
 
 void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
-                    i_type intrinsics) {
+                    size_t *thread_counts, i_type intrinsics) {
   if (intrinsics == AVX) {
     printf("\nRunning tests with AVX intrinsics\n");
   }
@@ -557,28 +559,29 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
   }
   printf("%11s\n", "Total");
 
-  benchmark(N, cluster_size, alias_fraction, 0, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 1, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 2, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 4, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 8, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 16, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 24, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 32, intrinsics);
-  benchmark(N, cluster_size, alias_fraction, 48, intrinsics);
+  for (size_t t = 0; t < NUM_THREAD_VARS; ++t) {
+    benchmark(N, cluster_size, alias_fraction, thread_counts[t], use_avx);
+  }
 }
 
 int main(int argc, char **argv) {
-  // Suppress Compiler Warnings
-  (void)argc;
-  (void)argv;
+  size_t N;
+  if (argc != 2) {
+    printf( "usage: %s size\n", argv[0] );
+    exit(1);
+  }
+  else {
+    char *nptr;
+    N = (size_t)strtoumax(argv[1], &nptr, 10);
+    printf("Running with double buffer of length: %zu\n", N);
+  }
 
-  size_t N = 1024 * 1024;
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
+  size_t thread_counts[8] = {1, 2, 4, 8, 16, 22, 32, 44};
 
 #ifdef USE_CLIENT
-  printf("Running tests using the memory controller, which must be started "
+  printf("Running using the memory controller, which must be started "
          "before this executable is run\n");
   client.chatty = 0;
   init(&client);
@@ -606,9 +609,9 @@ int main(int argc, char **argv) {
   printf("   F|C: full or clustered shuffle\n");
   printf(" A|noA: with or without aliases\n\n");
 
-  run_benchmarks(N, cluster_size, alias_fraction, NONE);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, false);
 #ifdef USE_AVX
-  run_benchmarks(N, cluster_size, alias_fraction, AVX);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, true);
 #endif /* USE_AVX */
 #ifdef USE_SVE
   run_benchmarks(N, cluster_size, alias_fraction, SVE);
@@ -616,12 +619,11 @@ int main(int argc, char **argv) {
 
 #ifdef USE_CLIENT
   // send quit request
-  // struct request quit_req;
-  // quit_req.client = client_id;
-  // quit_req.r_type = Quit;
-  // quit_req.id = ++req_id;
-  // scoria_put_request(&client, &quit_req);
-  // wait_request(&client, &quit_req);
+  struct request quit_req;
+  quit_req.r_type = Quit;
+  quit_req.id = ++req_id;
+  scoria_put_request(&client, &quit_req);
+  wait_request(&client, &quit_req);
 
   cleanup(&client);
 #endif
