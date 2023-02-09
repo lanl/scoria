@@ -484,6 +484,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   return all_pass;
 }
 
+#define NUM_THREAD_VARS 8
 void benchmark(size_t N, size_t cluster_size, double alias_fraction,
                size_t num_threads, bool use_avx) {
   size_t num_runs = 5;
@@ -538,7 +539,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
 }
 
 void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
-                    bool use_avx) {
+                    size_t * thread_counts, bool use_avx) {
   printf("\nRunning tests %s AVX intrinsics\n", use_avx ? "with" : "WITHOUT");
   const char *names[NUM_TESTS] = {"0-str",  "1-str", "1-FnoA", "1-CnoA",
                                   "1-FA",   "1-CA",  "2-str",  "2-FnoA",
@@ -549,15 +550,9 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
   }
   printf("%11s\n", "Total");
 
-  benchmark(N, cluster_size, alias_fraction, 0, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 1, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 2, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 4, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 8, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 16, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 24, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 32, use_avx);
-  benchmark(N, cluster_size, alias_fraction, 48, use_avx);
+  for (size_t t = 0; t < NUM_THREAD_VARS; ++t) {
+    benchmark(N, cluster_size, alias_fraction, thread_counts[t], use_avx);
+  }
 }
 
 int main(int argc, char **argv) {
@@ -574,6 +569,7 @@ int main(int argc, char **argv) {
 
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
+  size_t thread_counts[8] = {1, 2, 4, 8, 16, 22, 32, 44};
 
 #ifdef USE_CLIENT
   printf("Running using the memory controller, which must be started "
@@ -604,9 +600,9 @@ int main(int argc, char **argv) {
   printf("   F|C: full or clustered shuffle\n");
   printf(" A|noA: with or without aliases\n\n");
 
-  run_benchmarks(N, cluster_size, alias_fraction, false);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, false);
 #ifdef USE_AVX
-  run_benchmarks(N, cluster_size, alias_fraction, true);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, true);
 #endif /* USE_AVX */
 
 #ifdef USE_CLIENT
