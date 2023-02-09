@@ -50,8 +50,6 @@ def plot_test_bw(in_file, out_file):
         dfs.append(df)
 
     for df, title in zip(dfs, titles):
-        #print(title, df)
-
         fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(16, 10))
 
         dfr = df.filter(regex='(R)|Threads')
@@ -72,5 +70,6 @@ def plot_test_bw(in_file, out_file):
 
         plt.tight_layout()
 
-        figname = title.replace(' ', '_').strip()[3:] + '_' + out_file
+        title = ''.join(title.split()[3:])
+        figname = title.replace(' ', '_').strip() + '_' + out_file
         plt.savefig(figname)
