@@ -1,11 +1,11 @@
 #include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <inttypes.h>
 
 #include "client.h"
 #include "client_cleanup.h"
@@ -539,7 +539,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
 }
 
 void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
-                    size_t * thread_counts, bool use_avx) {
+                    size_t *thread_counts, bool use_avx) {
   printf("\nRunning tests %s AVX intrinsics\n", use_avx ? "with" : "WITHOUT");
   const char *names[NUM_TESTS] = {"0-str",  "1-str", "1-FnoA", "1-CnoA",
                                   "1-FA",   "1-CA",  "2-str",  "2-FnoA",
@@ -558,10 +558,9 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
 int main(int argc, char **argv) {
   size_t N;
   if (argc != 2) {
-    printf( "usage: %s size\n", argv[0] );
+    printf("usage: %s size\n", argv[0]);
     exit(1);
-  }
-  else {
+  } else {
     char *nptr;
     N = (size_t)strtoumax(argv[1], &nptr, 10);
     printf("Running with double buffer of length: %zu\n", N);

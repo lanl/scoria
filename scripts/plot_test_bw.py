@@ -70,6 +70,13 @@ def plot_test_bw(in_file, out_file):
 
         plt.tight_layout()
 
-        title = ''.join(title.split()[3:])
-        figname = title.replace(' ', '_').strip() + '_' + out_file
+        if "WITHOUT" in title:
+            modifier = 'WITHOUT_AVX_'
+        else:
+            modifier = 'AVX_'
+
+        out_file = out_file.split('/')
+        out_file[-1] = "WITHOUT_AVX_" + out_file[-1]
+        figname = '/'.join(out_file)
+
         plt.savefig(figname)
