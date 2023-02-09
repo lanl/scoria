@@ -22,5 +22,9 @@ include_directories(external/argtable3/src)
 
 add_executable(spatter_client spatter_client.c parse-args.c json.c sp_alloc.c pcg_basic.c backend-support-tests.c ${CLIENT_SOURCE_FILES} ${SHARED_SOURCE_FILES})
 target_compile_definitions(spatter_client PUBLIC USE_SERIAL)
-target_link_libraries(spatter_client shm pthread rt argtable3)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_link_libraries(spatter_client shm pthread m argtable3)
+else()
+  target_link_libraries(spatter_client shm pthread rt m argtable3)
+endif()
