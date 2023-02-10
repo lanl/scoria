@@ -30,9 +30,6 @@ struct request {
   size_t nthreads;
   bool use_avx;
 
-  size_t offset;
-  double value;
-
   UT_hash_handle hh;
 };
 
