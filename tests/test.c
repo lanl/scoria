@@ -89,6 +89,8 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
          *elapsed_ns)
   }
 
+  *internal_ns = 0;
+
 #endif
 
   return res;
@@ -146,6 +148,8 @@ void write_data(double *buffer, size_t N, const double *input,
                               use_avx),
          *elapsed_ns)
   }
+
+  *internal_ns = 0;
 
 #endif
 }
@@ -463,7 +467,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   return all_pass;
 }
 
-#define NUM_THREAD_VARS 8
+#define NUM_THREAD_VARS 9
 void benchmark(size_t N, size_t cluster_size, double alias_fraction,
                size_t num_threads, bool use_avx) {
   size_t num_runs = 5;
@@ -531,7 +535,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
     printf("%4.1f / %4.1f | %4.1f / %4.1f  ", bw_mult / (double)internal_time_read_sum[j], bw_mult / (double)time_read_sum[j],
            bw_mult / (double)internal_time_write_sum[j], bw_mult / (double)time_write_sum[j]);
 #else
-    printf("%4.1f | %4.1f  \n", NUM_TESTS * bw_mult / (double)time_read_sum[j], NUM_TESTS * bw_mult / (double)time_write_sum[j]);
+    printf("%4.1f | %4.1f  ", bw_mult / (double)time_read_sum[j], bw_mult / (double)time_write_sum[j]);
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */   
   }
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
@@ -581,7 +585,7 @@ int main(int argc, char **argv) {
 
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
-  size_t thread_counts[NUM_THREAD_VARS] = {1, 2, 4, 8, 16, 22, 32, 44};
+  size_t thread_counts[NUM_THREAD_VARS] = {0, 1, 2, 4, 8, 16, 22, 32, 44};
 
 #ifdef USE_CLIENT
   printf("Running using the memory controller, which must be started "

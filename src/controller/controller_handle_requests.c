@@ -50,8 +50,8 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
            "%ld\n",
            req->client, req->id, req->r_type, req->N);
 
-#ifdef Scoria_REQUIRE_TIMING
   uint64_t mtime = 0;
+#ifdef Scoria_REQUIRE_TIMING
   double bw_mult = (double)(req->N * sizeof(double));
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);  
 #endif /* Scoria_REQUIRE_TIMING */ 
@@ -190,8 +190,8 @@ c_status handle_write(struct controller *controller,
            req->client, req->id, req->r_type, (void *)req->output,
            (void *)req->input, req->N);
 
-#ifdef Scoria_REQUIRE_TIMING
   uint64_t mtime = 0;
+#ifdef Scoria_REQUIRE_TIMING
   double bw_mult = (double)(req->N * sizeof(double));
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);  
 #endif /* Scoria_REQUIRE_TIMING */ 
@@ -229,7 +229,7 @@ c_status handle_write(struct controller *controller,
       controller_status(stat, req);
     } else {
       if (controller->chatty)
- #ifdef Scoria_REQUIRE_TIMING
+#ifdef Scoria_REQUIRE_TIMING
         printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
                req->N, mtime, bw);
 #else

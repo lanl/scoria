@@ -52,7 +52,7 @@ endif()
 add_definitions(-DREQUEST_QUEUE_SIZE=${REQUEST_QUEUE_SIZE})
 message(STATUS "Setting REQUEST_QUEUE_SIZE to ${REQUEST_QUEUE_SIZE}")
 
-option(Scoria_REQUIRE_TIMING "Build Scoria with timing" ON)
+option(Scoria_REQUIRE_TIMING "Build Scoria with timing" OFF)
 if (Scoria_REQUIRE_TIMING)
   message(STATUS "Building with Timing Enabled")
   add_compile_definitions(Scoria_REQUIRE_TIMING)
