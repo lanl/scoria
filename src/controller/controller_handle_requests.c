@@ -5,6 +5,7 @@
 #include "kernels.h"
 #include "request.h"
 #include "utils.h"
+#include "mytimer.h"
 
 #include "shm_malloc.h"
 
@@ -49,17 +50,36 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
            "%ld\n",
            req->client, req->id, req->r_type, req->N);
 
+#ifdef Scoria_REQUIRE_TIMING
+  uint64_t mtime = 0;
+  double bw_mult = (double)(req->N * sizeof(double));
+  bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);  
+#endif /* Scoria_REQUIRE_TIMING */ 
+
   c_status stat = SCORIA_SUCCESS;
 
   if (req->ind1 == NULL) {
     assert(req->ind2 == NULL);
     if (req->nthreads == 0) {
-      stat =
-          read_single_thread_0(req->output, req->input, req->N, req->use_avx);
+      TIME(
+          {
+            stat =
+              read_single_thread_0(req->output, req->input, req->N, req->use_avx);
+          },
+          mtime)
     } else {
-      stat = read_multi_thread_0(req->output, req->input, req->N, req->nthreads,
+      TIME(
+          {
+            stat = read_multi_thread_0(req->output, req->input, req->N, req->nthreads,
                                  req->use_avx);
+          },
+          mtime)
     }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif
 
     req->r_status = Ready;
 
@@ -69,8 +89,12 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
       controller_status(stat, req);
     } else {
       if (controller->chatty)
-        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
-               req->N);
+#ifdef Scoria_REQUIRE_TIMING
+        printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
+               req->N, mtime, bw);
+#else
+        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client, req->N);
+#endif
     }
     return stat;
   }
@@ -78,12 +102,25 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
   if (req->ind2 == NULL) {
     assert(req->ind1 != NULL);
     if (req->nthreads == 0) {
-      stat = read_single_thread_1(req->output, req->input, req->N, req->ind1,
+      TIME(
+          {
+            stat = read_single_thread_1(req->output, req->input, req->N, req->ind1,
                                   req->use_avx);
+          },
+          mtime)
     } else {
-      stat = read_multi_thread_1(req->output, req->input, req->N, req->ind1,
+      TIME(
+          {
+            stat = read_multi_thread_1(req->output, req->input, req->N, req->ind1,
                                  req->nthreads, req->use_avx);
+         },
+         mtime)
     }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
 
     req->r_status = Ready;
 
@@ -93,8 +130,12 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
       controller_status(stat, req);
     } else {
       if (controller->chatty)
-        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
-               req->N);
+#ifdef Scoria_REQUIRE_TIMING
+        printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
+               req->N, mtime, bw);
+#else
+        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client, req->N);
+#endif /* Scoria_REQUIRE_TIMING */
     }
     return stat;
   }
@@ -103,12 +144,25 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
   assert(req->ind2 != NULL);
 
   if (req->nthreads == 0) {
-    stat = read_single_thread_2(req->output, req->input, req->N, req->ind1,
+    TIME(
+        {
+          stat = read_single_thread_2(req->output, req->input, req->N, req->ind1,
                                 req->ind2, req->use_avx);
+        },
+        mtime)
   } else {
-    stat = read_multi_thread_2(req->output, req->input, req->N, req->ind1,
+    TIME(
+        {
+          stat = read_multi_thread_2(req->output, req->input, req->N, req->ind1,
                                req->ind2, req->nthreads, req->use_avx);
+        },
+        mtime)
   }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
 
   req->r_status = Ready;
 
@@ -118,8 +172,12 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     controller_status(stat, req);
   } else {
     if (controller->chatty)
-      printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
-             req->N);
+#ifdef Scoria_REQUIRE_TIMING
+        printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
+               req->N, mtime, bw);
+#else
+        printf("Controller: Client(%d) Read Data with N: %ld\n", req->client, req->N);
+#endif /* Scoria_REQUIRE_TIMING */
   }
   return stat;
 }
@@ -132,17 +190,36 @@ c_status handle_write(struct controller *controller,
            req->client, req->id, req->r_type, (void *)req->output,
            (void *)req->input, req->N);
 
+#ifdef Scoria_REQUIRE_TIMING
+  uint64_t mtime = 0;
+  double bw_mult = (double)(req->N * sizeof(double));
+  bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);  
+#endif /* Scoria_REQUIRE_TIMING */ 
+
   c_status stat = SCORIA_SUCCESS;
 
   if (req->ind1 == NULL) {
     assert(req->ind2 == NULL);
     if (req->nthreads == 0) {
-      stat =
-          write_single_thread_0(req->output, req->input, req->N, req->use_avx);
-    } else {
-      stat = write_multi_thread_0(req->output, req->input, req->N,
+      TIME(
+          {
+            stat =
+                  write_single_thread_0(req->output, req->input, req->N, req->use_avx);
+          },
+          mtime)
+      } else {
+      TIME(
+          {
+            stat = write_multi_thread_0(req->output, req->input, req->N,
                                   req->nthreads, req->use_avx);
-    }
+          },
+          mtime)
+     }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
 
     req->r_status = Ready;
 
@@ -152,8 +229,12 @@ c_status handle_write(struct controller *controller,
       controller_status(stat, req);
     } else {
       if (controller->chatty)
-        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
-               req->N);
+ #ifdef Scoria_REQUIRE_TIMING
+        printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
+               req->N, mtime, bw);
+#else
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client, req->N);
+#endif /* Scoria_REQUIRE_TIMING */
     }
 
     return stat;
@@ -162,12 +243,25 @@ c_status handle_write(struct controller *controller,
   if (req->ind2 == NULL) {
     assert(req->ind1 != NULL);
     if (req->nthreads == 0) {
-      stat = write_single_thread_1(req->output, req->input, req->N, req->ind1,
+      TIME(
+          {
+            stat = write_single_thread_1(req->output, req->input, req->N, req->ind1,
                                    req->use_avx);
+          },
+          mtime)
     } else {
-      stat = write_multi_thread_1(req->output, req->input, req->N, req->ind1,
+      TIME(
+          {
+            stat = write_multi_thread_1(req->output, req->input, req->N, req->ind1,
                                   req->nthreads, req->use_avx);
+          },
+          mtime)
     }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
 
     req->r_status = Ready;
 
@@ -177,8 +271,12 @@ c_status handle_write(struct controller *controller,
       controller_status(stat, req);
     } else {
       if (controller->chatty)
-        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
-               req->N);
+#ifdef Scoria_REQUIRE_TIMING
+        printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
+               req->N, mtime, bw);
+#else
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client, req->N);
+#endif /* Scoria_REQUIRE_TIMING */
     }
 
     return stat;
@@ -188,12 +286,25 @@ c_status handle_write(struct controller *controller,
   assert(req->ind2 != NULL);
 
   if (req->nthreads == 0) {
-    stat = write_single_thread_2(req->output, req->input, req->N, req->ind1,
+    TIME(
+        {
+          stat = write_single_thread_2(req->output, req->input, req->N, req->ind1,
                                  req->ind2, req->use_avx);
+        },
+        mtime)
   } else {
-    stat = write_multi_thread_2(req->output, req->input, req->N, req->ind1,
+    TIME(
+        {
+          stat = write_multi_thread_2(req->output, req->input, req->N, req->ind1,
                                 req->ind2, req->nthreads, req->use_avx);
+        },
+        mtime)
   }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
 
   req->r_status = Ready;
 
@@ -202,9 +313,13 @@ c_status handle_write(struct controller *controller,
   if (stat != SCORIA_SUCCESS) {
     controller_status(stat, req);
   } else {
-    if (controller->chatty)
-      printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
-             req->N);
+    if (controller->chatty) 
+#ifdef Scoria_REQUIRE_TIMING
+        printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld Bandwidth: %f GiB/s\n", req->client,
+               req->N, mtime, bw);
+#else
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client, req->N);
+#endif /* Scoria_REQUIRE_TIMING */
   }
 
   return stat;

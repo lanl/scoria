@@ -41,6 +41,7 @@ void scoria_read(struct client *client, const void *buffer, const size_t N,
 
   req->client = client->id;
   req->r_type = Read;
+  req->nsecs = 0.0;
   req->input = buffer;
   req->output = output;
   req->N = N;
@@ -66,6 +67,7 @@ void scoria_write(struct client *client, void *buffer, const size_t N,
 
   req->client = client->id;
   req->r_type = Write;
+  req->nsecs = 0.0;
   req->output = buffer;
   req->input = input;
   req->N = N;
