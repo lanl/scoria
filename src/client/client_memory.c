@@ -35,7 +35,7 @@ void scoria_quit(struct client *client, struct request *req) {
 
 void scoria_read(struct client *client, const void *buffer, const size_t N,
                  void *output, const size_t *ind1, const size_t *ind2,
-                 size_t num_threads, bool use_avx, struct request *req) {
+                 size_t num_threads, i_type intrinsics, struct request *req) {
   if (client->chatty)
     printf("Client(%d): Reading Buffer\n", client->id);
 
@@ -48,7 +48,7 @@ void scoria_read(struct client *client, const void *buffer, const size_t N,
   req->ind1 = ind1;
   req->ind2 = ind2;
   req->nthreads = num_threads;
-  req->use_avx = use_avx;
+  req->intrinsics = intrinsics;
   req->id = rid;
   rid++;
 
@@ -61,7 +61,7 @@ void scoria_read(struct client *client, const void *buffer, const size_t N,
 
 void scoria_write(struct client *client, void *buffer, const size_t N,
                   const void *input, const size_t *ind1, const size_t *ind2,
-                  size_t num_threads, bool use_avx, struct request *req) {
+                  size_t num_threads, i_type intrinsics, struct request *req) {
   if (client->chatty)
     printf("Client(%d): Writing Buffer\n", client->id);
 
@@ -74,7 +74,7 @@ void scoria_write(struct client *client, void *buffer, const size_t N,
   req->ind1 = ind1;
   req->ind2 = ind2;
   req->nthreads = num_threads;
-  req->use_avx = use_avx;
+  req->intrinsics = intrinsics;
   req->id = rid;
   rid++;
 
