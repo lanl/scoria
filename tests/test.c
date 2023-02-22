@@ -603,7 +603,7 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
 
   for (size_t t = 0; t < NUM_THREAD_VARS; ++t) {
-    benchmark(N, cluster_size, alias_fraction, thread_counts[t], use_avx);
+    benchmark(N, cluster_size, alias_fraction, thread_counts[t], intrinsics);
   }
 }
 
@@ -658,12 +658,12 @@ int main(int argc, char **argv) {
   printf("   F|C: full or clustered shuffle\n");
   printf(" A|noA: with or without aliases\n\n");
 
-  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, false);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, NONE);
 #ifdef USE_AVX
-  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, true);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, AVX);
 #endif /* USE_AVX */
 #ifdef USE_SVE
-  run_benchmarks(N, cluster_size, alias_fraction, SVE);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, SVE);
 #endif /* USE_SVE */
 
 #ifdef USE_CLIENT

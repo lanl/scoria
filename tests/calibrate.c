@@ -13,6 +13,7 @@
 #include "client_memory.h"
 #include "client_wait_requests.h"
 #include "config.h"
+#include "request.h"
 #include "kernels.h"
 #include "shm_malloc.h"
 #include "mytimer.h"
@@ -23,6 +24,7 @@ size_t *ind1, *ind2, *tmp;
 #endif
 
 #ifdef USE_CLIENT
+#include <numa.h>
 struct client client;
 #else
 // use regular malloc and free if we're not using the client model
@@ -60,13 +62,14 @@ void *thread_init(void *args) {
   }
   return NULL;
 }
+#endif
 
 
 
 // mock API to interact with memory accelerator
 double *read_data(const double *buffer, size_t N, const size_t *ind1,
                   const size_t *ind2, uint64_t *internal_ns, uint64_t *elapsed_ns, size_t num_threads,
-                  bool use_avx) {
+                  i_type intrinsics) {
 // Only time loops, not memory allocation or flow control
 #ifndef SINGLE_ALLOC
   double *res = (double *)shm_malloc(N * sizeof(double));
@@ -80,7 +83,7 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
 
   TIME(
       {
-        scoria_read(&client, buffer, N, res, ind1, ind2, num_threads, use_avx,
+        scoria_read(&client, buffer, N, res, ind1, ind2, num_threads, intrinsics,
                     &read_req);
         wait_request(&client, &read_req);
       },
@@ -91,9 +94,9 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
   if (ind1 == NULL) {
     assert(ind2 == NULL);
     if (num_threads == 0) {
-      TIME(read_single_thread_0(res, buffer, N, use_avx), *elapsed_ns)
+      TIME(read_single_thread_0(res, buffer, N, intrinsics), *elapsed_ns)
     } else {
-      TIME(read_multi_thread_0(res, buffer, N, num_threads, use_avx),
+      TIME(read_multi_thread_0(res, buffer, N, num_threads, intrinsics),
            *elapsed_ns)
     }
     return res;
@@ -102,9 +105,9 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
   if (ind2 == NULL) {
     assert(ind1 != NULL);
     if (num_threads == 0) {
-      TIME(read_single_thread_1(res, buffer, N, ind1, use_avx), *elapsed_ns)
+      TIME(read_single_thread_1(res, buffer, N, ind1, intrinsics), *elapsed_ns)
     } else {
-      TIME(read_multi_thread_1(res, buffer, N, ind1, num_threads, use_avx),
+      TIME(read_multi_thread_1(res, buffer, N, ind1, num_threads, intrinsics),
            *elapsed_ns)
     }
     return res;
@@ -114,9 +117,9 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
   assert(ind2 != NULL);
 
   if (num_threads == 0) {
-    TIME(read_single_thread_2(res, buffer, N, ind1, ind2, use_avx), *elapsed_ns)
+    TIME(read_single_thread_2(res, buffer, N, ind1, ind2, intrinsics), *elapsed_ns)
   } else {
-    TIME(read_multi_thread_2(res, buffer, N, ind1, ind2, num_threads, use_avx),
+    TIME(read_multi_thread_2(res, buffer, N, ind1, ind2, num_threads, intrinsics),
          *elapsed_ns)
   }
 
@@ -129,7 +132,7 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
 
 void write_data(double *buffer, size_t N, const double *input,
                 const size_t *ind1, const size_t *ind2, uint64_t *internal_ns, uint64_t *elapsed_ns,
-                size_t num_threads, bool use_avx) {
+                size_t num_threads, i_type intrinsics) {
 #ifdef USE_CLIENT
 
   struct request write_req;
@@ -137,7 +140,7 @@ void write_data(double *buffer, size_t N, const double *input,
   TIME(
       {
         scoria_write(&client, buffer, N, input, ind1, ind2, num_threads,
-                     use_avx, &write_req);
+                     intrinsics, &write_req);
         wait_request(&client, &write_req);
       },
       *elapsed_ns)
@@ -149,9 +152,9 @@ void write_data(double *buffer, size_t N, const double *input,
   if (ind1 == NULL) {
     assert(ind2 == NULL);
     if (num_threads == 0) {
-      TIME(write_single_thread_0(buffer, input, N, use_avx), *elapsed_ns)
+      TIME(write_single_thread_0(buffer, input, N, intrinsics), *elapsed_ns)
     } else {
-      TIME(write_multi_thread_0(buffer, input, N, num_threads, use_avx),
+      TIME(write_multi_thread_0(buffer, input, N, num_threads, intrinsics),
            *elapsed_ns)
     }
     return;
@@ -160,9 +163,9 @@ void write_data(double *buffer, size_t N, const double *input,
   if (ind2 == NULL) {
     assert(ind1 != NULL);
     if (num_threads == 0) {
-      TIME(write_single_thread_1(buffer, input, N, ind1, use_avx), *elapsed_ns)
+      TIME(write_single_thread_1(buffer, input, N, ind1, intrinsics), *elapsed_ns)
     } else {
-      TIME(write_multi_thread_1(buffer, input, N, ind1, num_threads, use_avx),
+      TIME(write_multi_thread_1(buffer, input, N, ind1, num_threads, intrinsics),
            *elapsed_ns)
     }
     return;
@@ -172,11 +175,11 @@ void write_data(double *buffer, size_t N, const double *input,
   assert(ind2 != NULL);
 
   if (num_threads == 0) {
-    TIME(write_single_thread_2(buffer, input, N, ind1, ind2, use_avx),
+    TIME(write_single_thread_2(buffer, input, N, ind1, ind2, intrinsics),
          *elapsed_ns)
   } else {
     TIME(write_multi_thread_2(buffer, input, N, ind1, ind2, num_threads,
-                              use_avx),
+                              intrinsics),
          *elapsed_ns)
   }
 
@@ -226,7 +229,7 @@ size_t irand(size_t lower, size_t upper) {
 #define CHECK_IMPL(ind1, ind2, IDX)                                            \
   double *res =                                                                \
       read_data(data, N, ind1, ind2, internal_time_read, time_read,            \
-                num_threads, use_avx);                                         \
+                num_threads, intrinsics);                                      \
   for (size_t i = 0; i < N; ++i) {                                             \
     if (res[i] != data[IDX]) {                                                 \
       return 1;                                                                \
@@ -254,7 +257,7 @@ size_t irand(size_t lower, size_t upper) {
     alias_cnt[IDX] += 1;                                                       \
   }                                                                            \
   write_data(data, N, input, ind1, ind2, internal_time_write, time_write,      \
-             num_threads, use_avx);                                            \
+             num_threads, intrinsics);                                         \
                                                                                \
   start_idx[0] = 0;                                                            \
   for (size_t i = 1; i < N; ++i) {                                             \
@@ -441,7 +444,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
 
 #define NUM_THREAD_VARS 9
 void benchmark(size_t N, size_t cluster_size, double alias_fraction,
-               size_t num_threads, bool use_avx) {
+               size_t num_threads, i_type intrinsics) {
   size_t num_runs = 10;
 
   bool all_pass = true;
@@ -504,8 +507,15 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
 }
 
 void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
-                    size_t *thread_counts, bool use_avx) {
-  printf("\nRunning tests %s AVX intrinsics\n", use_avx ? "with" : "WITHOUT");
+                    size_t *thread_counts, i_type intrinsics) {
+  if (intrinsics == AVX) {
+    printf("\nRunning tests with AVX intrinsics\n");
+  } else if (intrinsics == SVE) {
+    printf("\nRunning tests with SVE intrinsics\n");
+  } else if (intrinsics == NONE) {
+    printf("\nRunning tests WITHOUT AVX or SVE intrinsics\n");
+  }
+
   const char *names[NUM_TESTS] = {"0-str"};
   printf("%8s  ", "Threads");
 
@@ -522,7 +532,10 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
 
   for (size_t t = 0; t < NUM_THREAD_VARS; ++t) {
-    benchmark(N, cluster_size, alias_fraction, thread_counts[t], use_avx);
+    benchmark(N, cluster_size, alias_fraction, thread_counts[t], intrinsics);
+  }
+}
+
 extern int omp_get_num_threads();
 
 void stream(size_t N, size_t num_runs) {
@@ -657,10 +670,14 @@ int main(int argc, char **argv) {
   printf("   F|C: full or clustered shuffle\n");
   printf(" A|noA: with or without aliases\n\n");
 
-  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, false);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, NONE);
 #ifdef USE_AVX
-  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, true);
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, AVX);
 #endif /* USE_AVX */
+#ifdef USE_SVE
+  run_benchmarks(N, cluster_size, alias_fraction, thread_counts, SVE);
+#endif /* USE_SVE */
+
 
 #ifdef USE_CLIENT
   // send quit request
