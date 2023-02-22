@@ -11,6 +11,12 @@
 #include <immintrin.h>
 #endif /* USE_AVX */
 
+#ifdef USE_SVE
+#ifdef __ARM_FEATURE_SVE
+#include <arm_sve.h>
+#endif /* __ARM_FEATURE_SVE */
+#endif /* USE_SVE */
+
 static_assert(sizeof(size_t) == 8, "size_t is expected to be a 64-bit integer");
 
 #define FORCE_INLINE __attribute__((always_inline)) static inline
@@ -156,84 +162,114 @@ static_assert(sizeof(size_t) == 8, "size_t is expected to be a 64-bit integer");
 // ===========================================================================
 
 FORCE_INLINE c_status read_single_thread_0(double *res, const double *buffer,
-                                           size_t N, bool use_avx) {
-  if (use_avx) {
+                                           size_t N, i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
     READ_0_AVX(buffer, res, 0, N)
     return AVX_READ_STATUS;
-  } else {
+  } else if (intrinsic_type == SVE) {
+    printf("TODO: SVE Intrinsics\n");
+    return SCORIA_SUCCESS;
+  } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
       res[i] = buffer[i];
     }
     return SCORIA_SUCCESS;
-  }
+  } else {
+    return SCORIA_INTRINSIC_EXIST;
+  } 
 }
 
 FORCE_INLINE c_status read_single_thread_1(double *res, const double *buffer,
                                            size_t N, const size_t *ind1,
-                                           bool use_avx) {
-  if (use_avx) {
+                                           i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
     READ_1_AVX(buffer, res, ind1, 0, N)
     return AVX_READ_STATUS;
-  } else {
+  } else if (intrinsic_type == SVE) {
+    printf("TODO: SVE Intrinsics\n");
+    return SCORIA_SUCCESS;
+  } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
       res[i] = buffer[ind1[i]];
     }
     return SCORIA_SUCCESS;
+  } else {
+    return SCORIA_INTRINSIC_EXIST;
   }
 }
 
 FORCE_INLINE c_status read_single_thread_2(double *res, const double *buffer,
                                            size_t N, const size_t *ind1,
-                                           const size_t *ind2, bool use_avx) {
-  if (use_avx) {
+                                           const size_t *ind2, i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
     READ_2_AVX(buffer, res, ind1, ind2, 0, N)
     return AVX_READ_STATUS;
-  } else {
+  } else if (intrinsic_type == SVE) {
+    printf("TODO: SVE Intrinsics\n");
+    return SCORIA_SUCCESS;
+  } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
       res[i] = buffer[ind2[ind1[i]]];
     }
     return SCORIA_SUCCESS;
+  } else {
+    return SCORIA_INTRINSIC_EXIST;
   }
 }
 
 FORCE_INLINE c_status write_single_thread_0(double *buffer, const double *input,
-                                            size_t N, bool use_avx) {
-  if (use_avx) {
+                                            size_t N, i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
     WRITE_0_AVX(buffer, input, 0, N)
     return AVX_WRITE_STATUS;
-  } else {
+  } else if (intrinsic_type == SVE) {
+    printf("TODO: SVE Intrinsics\n");
+    return SCORIA_SUCCESS;
+  } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
       buffer[i] = input[i];
     }
     return SCORIA_SUCCESS;
+  } else {
+    return SCORIA_INTRINSIC_EXIST;
   }
 }
 
 FORCE_INLINE c_status write_single_thread_1(double *buffer, const double *input,
                                             size_t N, const size_t *ind1,
-                                            bool use_avx) {
-  if (use_avx) {
+                                            i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
     WRITE_1_AVX(buffer, input, ind1, 0, N)
     return AVX_WRITE_STATUS;
-  } else {
+  } else if (intrinsic_type == SVE) {
+    printf("TODO: SVE Intrinsics\n");
+    return SCORIA_SUCCESS;
+  } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
       buffer[ind1[i]] = input[i];
     }
     return SCORIA_SUCCESS;
+  } else {
+    return SCORIA_INTRINSIC_EXIST;
   }
 }
 
 FORCE_INLINE c_status write_single_thread_2(double *buffer, const double *input,
                                             size_t N, const size_t *ind1,
-                                            const size_t *ind2, bool use_avx) {
-  if (use_avx) {
+                                            const size_t *ind2, i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
     WRITE_2_AVX(buffer, input, ind1, ind2, 0, N)
     return AVX_WRITE_STATUS;
-  } else {
+  } else if (intrinsic_type == SVE) {
+    printf("TODO: SVE Intrinsics\n");
+    return SCORIA_SUCCESS;
+  } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
       buffer[ind2[ind1[i]]] = input[i];
     }
     return SCORIA_SUCCESS;
+  } else {
+    return SCORIA_INTRINSIC_EXIST;
   }
 }
 
@@ -297,11 +333,29 @@ void *read_th_0_avx(void *args) {
   return NULL;
 }
 
+void *read_th_0_sve(void *args) {
+  struct read_th_args_0 *a = args;
+  printf("TODO: SVE Intrinsics\n");
+  a->stat = SCORIA_SUCCESS;
+  return NULL;
+}
+
 FORCE_INLINE c_status read_multi_thread_0(double *res, const double *buffer,
                                           size_t N, size_t n_threads,
-                                          bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, read_th_args_0,
-                  use_avx ? read_th_0_avx : read_th_0, { args[i].res = res; });
+                                          i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_0,
+                  read_th_0_avx, { args[i].res = res; });
+  }
+  else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0_sve, { args[i].res = res; });
+  }
+  else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0, { args[i].res = res; });
+  }
+  else {
+    return SCORIA_INTRINSIC_EXIST;
+  }
 }
 
 struct read_th_args_1 {
@@ -328,14 +382,40 @@ void *read_th_1_avx(void *args) {
   return NULL;
 }
 
+void *read_th_1_sve(void *args) {
+  struct read_th_args_1 *a = args;
+  printf("TODO: SVE Intrinsics\n");
+  a->stat = SCORIA_SUCCESS;
+  return NULL;
+}
+
 FORCE_INLINE c_status read_multi_thread_1(double *res, const double *buffer,
                                           size_t N, const size_t *ind1,
-                                          size_t n_threads, bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, read_th_args_1,
-                  use_avx ? read_th_1_avx : read_th_1, {
+                                          size_t n_threads, i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_1,
+                    read_th_1_avx, {
                     args[i].res = res;
                     args[i].ind1 = ind1;
                   });
+  }
+  else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_1,
+                    read_th_1_sve, {
+                    args[i].res = res;
+                    args[i].ind1 = ind1;
+                  });
+  }
+  else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_1,
+                    read_th_1, {
+                    args[i].res = res;
+                    args[i].ind1 = ind1;
+                  });
+  }
+  else {
+    return SCORIA_INTRINSIC_EXIST;
+  }
 }
 
 struct read_th_args_2 {
@@ -362,16 +442,44 @@ void *read_th_2_avx(void *args) {
   return NULL;
 }
 
+void *read_th_2_sve(void *args) {
+  struct read_th_args_2 *a = args;
+  printf("TODO: SVE Intrinsics\n");
+  a->stat = SCORIA_SUCCESS;
+  return NULL;
+}
+
 FORCE_INLINE c_status read_multi_thread_2(double *res, const double *buffer,
                                           size_t N, const size_t *ind1,
                                           const size_t *ind2, size_t n_threads,
-                                          bool use_avx) {
+                                          i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
   THREAD_TEMPLATE(N, n_threads, read_th_args_2,
-                  use_avx ? read_th_2_avx : read_th_2, {
+                    read_th_2_avx, {
                     args[i].res = res;
                     args[i].ind1 = ind1;
                     args[i].ind2 = ind2;
                   });
+  }
+  else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_2,
+                    read_th_2_sve, {
+                    args[i].res = res;
+                    args[i].ind1 = ind1;
+                    args[i].ind2 = ind2;
+                  });
+  }
+  else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_2,
+                    read_th_2, {
+                    args[i].res = res;
+                    args[i].ind1 = ind1;
+                    args[i].ind2 = ind2;
+                  });
+  }
+  else {
+    return SCORIA_INTRINSIC_EXIST;
+  }
 }
 
 struct write_th_args_0 {
@@ -397,12 +505,34 @@ void *write_th_0_avx(void *args) {
   return NULL;
 }
 
+void *write_th_0_sve(void *args) {
+  struct write_th_args_0 *a = args;
+  printf("TODO: SVE Intrinsics\n");
+  a->stat = SCORIA_SUCCESS;
+  return NULL;
+}
+
 FORCE_INLINE c_status write_multi_thread_0(double *buffer, const double *input,
                                            size_t N, size_t n_threads,
-                                           bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, write_th_args_0,
-                  use_avx ? write_th_0_avx : write_th_0,
+                                           i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_0,
+                  write_th_0_avx,
                   { args[i].input = input; });
+  }
+  else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_0,
+                  write_th_0_sve,
+                  { args[i].input = input; });
+  }
+  else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_0,
+                  write_th_0,
+                  { args[i].input = input; });
+  }
+  else {
+    return SCORIA_INTRINSIC_EXIST;
+  }
 }
 
 struct write_th_args_1 {
@@ -429,15 +559,41 @@ void *write_th_1_avx(void *args) {
   return NULL;
 }
 
+void *write_th_1_sve(void *args) {
+  struct write_th_args_1 *a = args;
+  printf("TODO: SVE Intrinsics\n");
+  a->stat = SCORIA_SUCCESS;
+  return NULL;
+}
+
 FORCE_INLINE
 c_status write_multi_thread_1(double *buffer, const double *input, size_t N,
                               const size_t *ind1, size_t n_threads,
-                              bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, write_th_args_1,
-                  use_avx ? write_th_1_avx : write_th_1, {
+                              i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_1,
+                    write_th_1_avx, {
                     args[i].input = input;
                     args[i].ind1 = ind1;
                   });
+  }
+  else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_1,
+                    write_th_1_sve, {
+                    args[i].input = input;
+                    args[i].ind1 = ind1;
+                  });
+  }
+  else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_1,
+                    write_th_1, {
+                    args[i].input = input;
+                    args[i].ind1 = ind1;
+                  });
+  }
+  else {
+    return SCORIA_INTRINSIC_EXIST;
+  }
 }
 
 struct write_th_args_2 {
@@ -464,14 +620,43 @@ void *write_th_2_avx(void *args) {
   return NULL;
 }
 
+void *write_th_2_sve(void *args) {
+  struct write_th_args_2 *a = args;
+  printf("TODO: SVE Intrinsics\n");
+  a->stat = SCORIA_SUCCESS;
+  return NULL;
+}
+
+
 FORCE_INLINE c_status write_multi_thread_2(double *buffer, const double *input,
                                            size_t N, const size_t *ind1,
                                            const size_t *ind2, size_t n_threads,
-                                           bool use_avx) {
-  THREAD_TEMPLATE(N, n_threads, write_th_args_2,
-                  use_avx ? write_th_2_avx : write_th_2, {
+                                           i_type intrinsic_type) {
+  if (intrinsic_type == AVX) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_2,
+                    write_th_2_avx, {
                     args[i].input = input;
                     args[i].ind1 = ind1;
                     args[i].ind2 = ind2;
                   });
+  }
+  else if (intrinsic_type == SVE) {
+ THREAD_TEMPLATE(N, n_threads, write_th_args_2,
+                    write_th_2_sve, {
+                    args[i].input = input;
+                    args[i].ind1 = ind1;
+                    args[i].ind2 = ind2;
+                  });
+  }
+  else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_2,
+                    write_th_2, {
+                    args[i].input = input;
+                    args[i].ind1 = ind1;
+                    args[i].ind2 = ind2;
+                  });
+  }
+  else {
+    return SCORIA_INTRINSIC_EXIST;
+  }
 }
