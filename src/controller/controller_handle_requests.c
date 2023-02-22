@@ -52,7 +52,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
 
   uint64_t mtime = 0;
 #ifdef Scoria_REQUIRE_TIMING
-  double bw_mult = (double)(req->N * sizeof(double));
+  double bw_mult = (double)(2.0 * req->N * sizeof(double));
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);  
 #endif /* Scoria_REQUIRE_TIMING */ 
 
@@ -192,7 +192,7 @@ c_status handle_write(struct controller *controller,
 
   uint64_t mtime = 0;
 #ifdef Scoria_REQUIRE_TIMING
-  double bw_mult = (double)(req->N * sizeof(double));
+  double bw_mult = (double)(2.0 * req->N * sizeof(double));
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);  
 #endif /* Scoria_REQUIRE_TIMING */ 
 

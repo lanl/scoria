@@ -15,8 +15,6 @@
 #include "kernels.h"
 #include "shm_malloc.h"
 #include "mytimer.h"
-#define SINGLE_ALLOC
-
 
 #ifdef SINGLE_ALLOC
 double *res, *input, *buffer, *data;
@@ -467,7 +465,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   return all_pass;
 }
 
-#define NUM_THREAD_VARS 9
+#define NUM_THREAD_VARS 10
 void benchmark(size_t N, size_t cluster_size, double alias_fraction,
                size_t num_threads, bool use_avx) {
   size_t num_runs = 5;
@@ -518,7 +516,8 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   printf("%8zu  ", num_threads);
   // we want to compute bandwidth in MiB/s, multiply data by number of tests
   // timed
-  double bw_mult = (double)(N * sizeof(double) * (num_runs - ignore_first_num));
+  // Multiply by 2 since we read an array and write to another or vice versa
+  double bw_mult = (double)(2.0 * N * sizeof(double) * (num_runs - ignore_first_num));
   // now divide to get GiB and multiply by 1e9 because time is in ns
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 
@@ -585,7 +584,7 @@ int main(int argc, char **argv) {
 
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
-  size_t thread_counts[NUM_THREAD_VARS] = {0, 1, 2, 4, 8, 16, 22, 32, 44};
+  size_t thread_counts[NUM_THREAD_VARS] = {0, 1, 2, 4, 8, 16, 22, 32, 44, 88};
 
 #ifdef USE_CLIENT
   printf("Running using the memory controller, which must be started "
@@ -606,6 +605,7 @@ int main(int argc, char **argv) {
 
   // doesn't have to be shared memory
   tmp = (size_t *)malloc(4 * N * sizeof(size_t));
+
 #endif
 
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)

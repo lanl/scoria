@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
 
-add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-prototypes -g)
+add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-prototypes -O3)
 
 include_directories(include)
 include_directories(include/controller)
