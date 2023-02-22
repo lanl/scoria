@@ -263,13 +263,13 @@ size_t irand(size_t lower, size_t upper) {
   return ret;
 
 int check_0_level(double *data, size_t N, uint64_t *internal_time_read,
-                  uint64_t *internal_time_write, uint64_t *time_read,
+                  uint64_t *time_read, uint64_t *internal_time_write,
                   uint64_t *time_write, size_t num_threads, i_type intrinsics) {
   CHECK_IMPL(NULL, NULL, i)
 }
 
 int check_1_level(double *data, size_t N, const size_t *ind,
-                  uint64_t *time_read, uint64_t *internal_time_read,
+                  uint64_t *internal_time_read, uint64_t *time_read,
                   uint64_t *internal_time_write, uint64_t *time_write,
                   size_t num_threads, i_type intrinsics) {
   CHECK_IMPL(ind, NULL, ind[i])
@@ -277,7 +277,7 @@ int check_1_level(double *data, size_t N, const size_t *ind,
 
 int check_2_level(double *data, size_t N, const size_t *ind1,
                   const size_t *ind2, uint64_t *internal_time_read,
-                  uint64 *internal_time_write, uint64_t *time_read,
+                  uint64_t *time_read, uint64_t *internal_time_write,
                   uint64_t *time_write, size_t num_threads, i_type intrinsics) {
   CHECK_IMPL(ind1, ind2, ind2[ind1[i]])
 }
@@ -356,8 +356,8 @@ void reset(double *data, size_t *ind1, size_t *ind2, size_t N) {
 
 bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
                     size_t num_threads, i_type intrinsics,
-                    uint64_t *internal_time_read, uint64_t *internal_time_write,
-                    uint64_t *time_read, uint64_t *time_write) {
+                    uint64_t *internal_time_read, uint64_t *time_read,
+                    uint64_t *internal_time_write, uint64_t *time_write) {
   // initialize random number generator, use a specific seed to make every run
   // of the test suite use the same indirection
   srand48(42);
@@ -382,7 +382,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   reset(data, ind1, ind2, N);
   all_pass &= report("No indirection",
                      check_0_level(data, N, internal_time_read + 0,
-                                   internal_time_write + 0, time_read + 0,
+                                   time_read + 0, internal_time_write + 0,
                                    time_write + 0, num_threads, intrinsics));
 
   // 1 level of indirection
@@ -391,7 +391,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   reset(data, ind1, ind2, N);
   all_pass &= report("1-lev straight",
                      check_1_level(data, N, ind1, internal_time_read + 1,
-                                   internal_time_write + 1, time_read + 1,
+                                   time_read + 1, internal_time_write + 1,
                                    time_write + 1, num_threads, intrinsics));
 
   // permutation (no aliases)
@@ -399,7 +399,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   shuffle(ind1, N);
   all_pass &= report("1-lev full shuffle no alias",
                      check_1_level(data, N, ind1, internal_time_read + 2,
-                                   internal_time_write + 2, time_read + 2,
+                                   time_read + 2, internal_time_write + 2,
                                    time_write + 2, num_threads, intrinsics));
 
   reset(data, ind1, ind2, N);
@@ -407,7 +407,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   all_pass &= report("1-lev clustered no alias",
 
                      check_1_level(data, N, ind1, internal_time_read + 3,
-                                   internal_time_write + 3, time_read + 3,
+                                   time_read + 3, internal_time_write + 3,
                                    time_write + 3, num_threads, intrinsics));
 
   // with aliases
@@ -416,7 +416,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   shuffle(ind1, N);
   all_pass &= report("1-lev full shuffle with alias",
                      check_1_level(data, N, ind1, internal_time_read + 4,
-                                   internal_time_write + 4, time_read + 4,
+                                   time_read + 4, internal_time_write + 4,
                                    time_write + 4, num_threads, intrinsics));
 
   reset(data, ind1, ind2, N);
@@ -424,7 +424,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   clustered_shuffle(ind1, N, cluster_size);
   all_pass &= report("1-lev clustered with alias",
                      check_1_level(data, N, ind1, internal_time_read + 5,
-                                   internal_time_write + 5, time_read + 5,
+                                   time_read + 5, internal_time_write + 5,
                                    time_write + 5, num_threads, intrinsics));
 
   // 2 level of indirection
@@ -433,7 +433,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   reset(data, ind1, ind2, N);
   all_pass &= report("2-lev straight",
                      check_2_level(data, N, ind1, ind2, internal_time_read + 6,
-                                   internal_time_write + 6, time_read + 6,
+                                   time_read + 6, internal_time_write + 6,
                                    time_write + 6, num_threads, intrinsics));
 
   // permutation (no aliases)
@@ -442,7 +442,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   shuffle(ind2, N);
   all_pass &= report("2-lev full shuffle no alias",
                      check_2_level(data, N, ind1, ind2, internal_time_read + 7,
-                                   internal_time_write + 7, time_read + 7,
+                                   time_read + 7, internal_time_write + 7,
                                    time_write + 7, num_threads, intrinsics));
 
   reset(data, ind1, ind2, N);
@@ -450,7 +450,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   clustered_shuffle(ind2, N, cluster_size);
   all_pass &= report("2-lev clustered no alias",
                      check_2_level(data, N, ind1, ind2, internal_time_read + 8,
-                                   internal_time_write + 8, time_read + 8,
+                                   time_read + 8, internal_time_write + 8,
                                    time_write + 8, num_threads, intrinsics));
 
   // with aliases
@@ -461,7 +461,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   shuffle(ind2, N);
   all_pass &= report("2-lev full shuffle with alias",
                      check_2_level(data, N, ind1, ind2, internal_time_read + 9,
-                                   internal_time_write + 9, time_read + 9,
+                                   time_read + 9, internal_time_write + 9,
                                    time_write + 9, num_threads, intrinsics));
 
   reset(data, ind1, ind2, N);
@@ -471,7 +471,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   clustered_shuffle(ind2, N, cluster_size);
   all_pass &= report("2-lev clustered with alias",
                      check_2_level(data, N, ind1, ind2, internal_time_read + 10,
-                                   internal_time_write + 10, time_read + 10,
+                                   time_read + 10, internal_time_write + 10,
                                    time_write + 10, num_threads, intrinsics));
 
 #ifndef SINGLE_ALLOC
@@ -520,7 +520,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
 
     all_pass &= run_test_suite(N, cluster_size, alias_fraction, num_threads,
                                intrinsics, internal_time_read,
-                               internal_time_write, time_read, time_write);
+                               time_read, internal_time_write, time_write);
 
     if (i >= ignore_first_num) {
       for (size_t j = 0; j < NUM_TESTS; ++j) {

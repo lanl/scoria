@@ -293,21 +293,9 @@ size_t irand(size_t lower, size_t upper) {
   TMP_FREE;                                                                    \
   return ret;
 
-int check_0_level(double *data, size_t N, uint64_t *internal_time_read, uint64_t *internal_time_write, uint64_t *time_read,
-                  uint64_t *time_write, size_t num_threads, bool use_avx) {
+int check_0_level(double *data, size_t N, uint64_t *internal_time_read, uint64_t *time_read, uint64_t *internal_time_write,
+                  uint64_t *time_write, size_t num_threads, i_type intrinsics) {
   CHECK_IMPL(NULL, NULL, i)
-}
-
-int check_1_level(double *data, size_t N, const size_t *ind,
-                  uint64_t *internal_time_read, uint64_t *internal_time_write, uint64_t *time_read, uint64_t *time_write, size_t num_threads,
-                  bool use_avx) {
-  CHECK_IMPL(ind, NULL, ind[i])
-}
-
-int check_2_level(double *data, size_t N, const size_t *ind1,
-                  const size_t *ind2, uint64_t *internal_time_read, uint64_t *internal_time_write, uint64_t *time_read, uint64_t *time_write,
-                  size_t num_threads, bool use_avx) {
-  CHECK_IMPL(ind1, ind2, ind2[ind1[i]])
 }
 
 // shuffle in-place the given indices from indices[0] to indices[N-1]
@@ -383,7 +371,7 @@ void reset(double *data, size_t *ind1, size_t *ind2, size_t N) {
 #define NUM_TESTS 1
 
 bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
-                    size_t num_threads, bool use_avx, uint64_t *internal_time_read, uint64_t *internal_time_write, uint64_t *time_read,
+                    size_t num_threads, i_type intrinsics, uint64_t *internal_time_read, uint64_t *time_read, uint64_t *internal_time_write,
                     uint64_t *time_write) {
   (void)cluster_size;
   (void)alias_fraction;
@@ -440,8 +428,8 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   // No indirection
   reset(data, ind1, ind2, N);
   all_pass &= report("No indirection",
-                     check_0_level(data, N, internal_time_read + 0, internal_time_write + 0, time_read + 0, time_write + 0,
-                                   num_threads, use_avx));
+                     check_0_level(data, N, internal_time_read + 0, time_read + 0, internal_time_write + 0, time_write + 0,
+                                   num_threads, intrinsics));
 #ifndef SINGLE_ALLOC
   shm_free(data);
   shm_free(ind1);
@@ -485,7 +473,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
     }
 
     all_pass &= run_test_suite(N, cluster_size, alias_fraction, num_threads,
-                               use_avx, internal_time_read, internal_time_write, time_read, time_write);
+                               intrinsics, internal_time_read, time_read, internal_time_write, time_write);
 
     for (size_t j = 0; j < NUM_TESTS; ++j) {
       internal_time_read_min[j] = internal_time_read_min[j] < internal_time_read[j] ? internal_time_read_min[j] : internal_time_read[j];
