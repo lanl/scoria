@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
 
-add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-prototypes -g)
+add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-prototypes -O3)
 
 include_directories(include)
 include_directories(include/controller)
@@ -53,6 +53,12 @@ if(NOT REQUEST_QUEUE_SIZE)
 endif()
 add_definitions(-DREQUEST_QUEUE_SIZE=${REQUEST_QUEUE_SIZE})
 message(STATUS "Setting REQUEST_QUEUE_SIZE to ${REQUEST_QUEUE_SIZE}")
+
+option(Scoria_REQUIRE_TIMING "Build Scoria with timing" OFF)
+if (Scoria_REQUIRE_TIMING)
+  message(STATUS "Building with Timing Enabled")
+  add_compile_definitions(Scoria_REQUIRE_TIMING)
+endif()
 
 option(Scoria_REQUIRE_CLIENTS "Build Scoria example clients" ON)
 if(Scoria_REQUIRE_CLIENTS)
