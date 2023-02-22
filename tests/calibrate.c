@@ -490,16 +490,25 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   // we want to compute bandwidth in MiB/s, multiply data by number of tests
   // timed
   // Multiply by 2 since we read an array and write to another or vice versa
-  double bw_mult = (double)(2.0 * N * sizeof(double));
+  double bw_mult = (double)(N * sizeof(double));
   // now divide to get GiB and multiply by 1e9 because time is in ns
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 
+  double factor;
   for (size_t j = 0; j < NUM_TESTS; ++j) {
-#if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
-    printf("%4.1f / %4.1f | %4.1f / %4.1f  ", bw_mult / (double)internal_time_read_min[j], bw_mult / (double)time_read_min[j],
-           bw_mult / (double)internal_time_write_min[j], bw_mult / (double)time_write_min[j]);
+#ifdef SCALE_BW
+    if (j == 0) factor = 2.0;
+    else if (j < 6) factor = 3.0;
+    else factor = 4.0;
 #else
-    printf("%4.1f | %4.1f  ", bw_mult / (double)time_read_min[j], bw_mult / (double)time_write_min[j]);
+    factor = 2.0;
+#endif /* SCALE_BW */
+
+#if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
+    printf("%4.1f / %4.1f | %4.1f / %4.1f  ", factor * bw_mult / (double)internal_time_read_min[j], factor * bw_mult / (double)time_read_min[j],
+           factor * bw_mult / (double)internal_time_write_min[j], factor * bw_mult / (double)time_write_min[j]);
+#else
+    printf("%4.1f | %4.1f  ", factor * bw_mult / (double)time_read_min[j], factor * bw_mult / (double)time_write_min[j]);
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */   
   }
 

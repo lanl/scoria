@@ -537,7 +537,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   // timed
   // Multiply by 2 since we read an array and write to another or vice versa
   double bw_mult =
-      (double)(2.0 * N * sizeof(double) * (num_runs - ignore_first_num));
+      (double)(N * sizeof(double) * (num_runs - ignore_first_num));
   // now divide to get GiB and multiply by 1e9 because time is in ns
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 
@@ -545,32 +545,45 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   uint64_t internal_total_write = 0;
   uint64_t total_read = 0;
   uint64_t total_write = 0;
+
+  double factor;
+  double avg_factor = 2.0;
   for (size_t j = 0; j < NUM_TESTS; ++j) {
+#ifdef SCALE_BW
+    avg_factor = 37.0 / 11.0;
+    if (j == 0) factor = 2.0;
+    else if (j < 6) factor = 3.0;
+    else factor = 4.0;
+#else
+    avg_factor = 2.0;
+    factor = 2.0;
+#endif /* SCALE_BW */
+
     internal_total_read += internal_time_read_sum[j];
     internal_total_write += internal_time_write_sum[j];
     total_read += time_read_sum[j];
     total_write += time_write_sum[j];
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
     printf("%4.1f / %4.1f | %4.1f / %4.1f  ",
-           bw_mult / (double)internal_time_read_sum[j],
-           bw_mult / (double)time_read_sum[j],
-           bw_mult / (double)internal_time_write_sum[j],
-           bw_mult / (double)time_write_sum[j]);
+           factor * bw_mult / (double)internal_time_read_sum[j],
+           factor * bw_mult / (double)time_read_sum[j],
+           factor * bw_mult / (double)internal_time_write_sum[j],
+           factor * bw_mult / (double)time_write_sum[j]);
 #else
-    printf("%4.1f | %4.1f  ", bw_mult / (double)time_read_sum[j],
-           bw_mult / (double)time_write_sum[j]);
+    printf("%4.1f | %4.1f  ", factor * bw_mult / (double)time_read_sum[j],
+           factor * bw_mult / (double)time_write_sum[j]);
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
   }
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
   printf("%4.1f / %4.1f | %4.1f / %4.1f  %s\n",
-         NUM_TESTS * bw_mult / (double)internal_total_read,
-         NUM_TESTS * bw_mult / (double)total_read,
-         NUM_TESTS * bw_mult / (double)internal_total_write,
-         NUM_TESTS * bw_mult / (double)total_write,
+         avg_factor * NUM_TESTS * bw_mult / (double)internal_total_read,
+         avg_factor * NUM_TESTS * bw_mult / (double)total_read,
+         avg_factor * NUM_TESTS * bw_mult / (double)internal_total_write,
+         avg_factor * NUM_TESTS * bw_mult / (double)total_write,
          all_pass ? "all pass" : "some FAILED");
 #else
-  printf("%4.1f | %4.1f  %s\n", NUM_TESTS * bw_mult / (double)total_read,
-         NUM_TESTS * bw_mult / (double)total_write,
+  printf("%4.1f | %4.1f  %s\n", avg_factor * NUM_TESTS * bw_mult / (double)total_read,
+         avg_factor * NUM_TESTS * bw_mult / (double)total_write,
          all_pass ? "all pass" : "some FAILED");
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
 }
