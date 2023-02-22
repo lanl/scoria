@@ -33,6 +33,8 @@ struct request {
   size_t offset;
   double value;
 
+  uint64_t nsecs;
+
   UT_hash_handle hh;
 };
 
