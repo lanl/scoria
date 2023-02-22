@@ -24,7 +24,6 @@ size_t *ind1, *ind2, *tmp;
 
 #ifdef USE_CLIENT
 struct client client;
-int req_id = 0;
 #else
 // use regular malloc and free if we're not using the client model
 #define shm_malloc malloc
@@ -597,9 +596,7 @@ int main(int argc, char **argv) {
 #ifdef USE_CLIENT
   // send quit request
   struct request quit_req;
-  quit_req.r_type = Quit;
-  quit_req.id = ++req_id;
-  scoria_put_request(&client, &quit_req);
+  scoria_quit(&client, &quit_req);
   wait_request(&client, &quit_req);
 
   cleanup(&client);

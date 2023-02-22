@@ -5,7 +5,7 @@
 #include "request.h"
 
 struct thread_args {
-  size_t i;
+  int id;
   struct controller *controller;
 };
 
