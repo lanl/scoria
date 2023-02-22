@@ -12,10 +12,10 @@
 #include "client_memory.h"
 #include "client_wait_requests.h"
 #include "config.h"
-#include "request.h"
 #include "kernels.h"
-#include "shm_malloc.h"
 #include "mytimer.h"
+#include "request.h"
+#include "shm_malloc.h"
 
 #ifdef SINGLE_ALLOC
 double *res, *input, *buffer, *data;
@@ -45,14 +45,20 @@ struct thread_init_args {
 
 void *thread_init(void *args) {
   struct thread_init_args *a = args;
-  
+
   int status;
 
   for (size_t i = 0; i < a->pages; ++i) {
     int nodes[1] = {a->id < (a->nthreads / 2)};
-    numa_move_pages(0, 1, (void *)((uint8_t *)(&(a->data[a->start])) + a->pgsize), nodes, &status, 0);
-    numa_move_pages(0, 1, (void *)((uint8_t*)(&(a->ind1[a->start])) + a->pgsize), nodes, &status, 0);
-    numa_move_pages(0, 1, (void *)((uint8_t*)(&(a->ind2[a->start])) + a->pgsize), nodes, &status, 0);
+    numa_move_pages(0, 1,
+                    (void *)((uint8_t *)(&(a->data[a->start])) + a->pgsize),
+                    nodes, &status, 0);
+    numa_move_pages(0, 1,
+                    (void *)((uint8_t *)(&(a->ind1[a->start])) + a->pgsize),
+                    nodes, &status, 0);
+    numa_move_pages(0, 1,
+                    (void *)((uint8_t *)(&(a->ind2[a->start])) + a->pgsize),
+                    nodes, &status, 0);
   }
 
   for (size_t i = a->start; i < a->end; ++i) {
@@ -64,12 +70,10 @@ void *thread_init(void *args) {
 }
 #endif
 
-
-
 // mock API to interact with memory accelerator
 double *read_data(const double *buffer, size_t N, const size_t *ind1,
-                  const size_t *ind2, uint64_t *internal_ns, uint64_t *elapsed_ns, size_t num_threads,
-                  i_type intrinsics) {
+                  const size_t *ind2, uint64_t *internal_ns,
+                  uint64_t *elapsed_ns, size_t num_threads, i_type intrinsics) {
 // Only time loops, not memory allocation or flow control
 #ifndef SINGLE_ALLOC
   double *res = (double *)shm_malloc(N * sizeof(double));
@@ -83,8 +87,8 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
 
   TIME(
       {
-        scoria_read(&client, buffer, N, res, ind1, ind2, num_threads, intrinsics,
-                    &read_req);
+        scoria_read(&client, buffer, N, res, ind1, ind2, num_threads,
+                    intrinsics, &read_req);
         wait_request(&client, &read_req);
       },
       *elapsed_ns)
@@ -117,9 +121,11 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
   assert(ind2 != NULL);
 
   if (num_threads == 0) {
-    TIME(read_single_thread_2(res, buffer, N, ind1, ind2, intrinsics), *elapsed_ns)
+    TIME(read_single_thread_2(res, buffer, N, ind1, ind2, intrinsics),
+         *elapsed_ns)
   } else {
-    TIME(read_multi_thread_2(res, buffer, N, ind1, ind2, num_threads, intrinsics),
+    TIME(read_multi_thread_2(res, buffer, N, ind1, ind2, num_threads,
+                             intrinsics),
          *elapsed_ns)
   }
 
@@ -131,8 +137,8 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
 }
 
 void write_data(double *buffer, size_t N, const double *input,
-                const size_t *ind1, const size_t *ind2, uint64_t *internal_ns, uint64_t *elapsed_ns,
-                size_t num_threads, i_type intrinsics) {
+                const size_t *ind1, const size_t *ind2, uint64_t *internal_ns,
+                uint64_t *elapsed_ns, size_t num_threads, i_type intrinsics) {
 #ifdef USE_CLIENT
 
   struct request write_req;
@@ -163,10 +169,12 @@ void write_data(double *buffer, size_t N, const double *input,
   if (ind2 == NULL) {
     assert(ind1 != NULL);
     if (num_threads == 0) {
-      TIME(write_single_thread_1(buffer, input, N, ind1, intrinsics), *elapsed_ns)
-    } else {
-      TIME(write_multi_thread_1(buffer, input, N, ind1, num_threads, intrinsics),
+      TIME(write_single_thread_1(buffer, input, N, ind1, intrinsics),
            *elapsed_ns)
+    } else {
+      TIME(
+          write_multi_thread_1(buffer, input, N, ind1, num_threads, intrinsics),
+          *elapsed_ns)
     }
     return;
   }
@@ -227,9 +235,8 @@ size_t irand(size_t lower, size_t upper) {
 // 1: read failed
 // 2: write failed
 #define CHECK_IMPL(ind1, ind2, IDX)                                            \
-  double *res =                                                                \
-      read_data(data, N, ind1, ind2, internal_time_read, time_read,            \
-                num_threads, intrinsics);                                      \
+  double *res = read_data(data, N, ind1, ind2, internal_time_read, time_read,  \
+                          num_threads, intrinsics);                            \
   for (size_t i = 0; i < N; ++i) {                                             \
     if (res[i] != data[IDX]) {                                                 \
       return 1;                                                                \
@@ -296,7 +303,8 @@ size_t irand(size_t lower, size_t upper) {
   TMP_FREE;                                                                    \
   return ret;
 
-int check_0_level(double *data, size_t N, uint64_t *internal_time_read, uint64_t *time_read, uint64_t *internal_time_write,
+int check_0_level(double *data, size_t N, uint64_t *internal_time_read,
+                  uint64_t *time_read, uint64_t *internal_time_write,
                   uint64_t *time_write, size_t num_threads, i_type intrinsics) {
   CHECK_IMPL(NULL, NULL, i)
 }
@@ -374,8 +382,9 @@ void reset(double *data, size_t *ind1, size_t *ind2, size_t N) {
 #define NUM_TESTS 1
 
 bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
-                    size_t num_threads, i_type intrinsics, uint64_t *internal_time_read, uint64_t *time_read, uint64_t *internal_time_write,
-                    uint64_t *time_write) {
+                    size_t num_threads, i_type intrinsics,
+                    uint64_t *internal_time_read, uint64_t *time_read,
+                    uint64_t *internal_time_write, uint64_t *time_write) {
   (void)cluster_size;
   (void)alias_fraction;
   // initialize random number generator, use a specific seed to make every run
@@ -432,8 +441,9 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   // No indirection
   reset(data, ind1, ind2, N);
   all_pass &= report("No indirection",
-                     check_0_level(data, N, internal_time_read + 0, time_read + 0, internal_time_write + 0, time_write + 0,
-                                   num_threads, intrinsics));
+                     check_0_level(data, N, internal_time_read + 0,
+                                   time_read + 0, internal_time_write + 0,
+                                   time_write + 0, num_threads, intrinsics));
 #ifndef SINGLE_ALLOC
   shm_free(data);
   shm_free(ind1);
@@ -471,19 +481,28 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
     for (size_t j = 0; j < NUM_TESTS; ++j) {
       internal_time_read[j] = 0;
       internal_time_write[j] = 0;
-      
+
       time_read[j] = 0;
       time_write[j] = 0;
     }
 
     all_pass &= run_test_suite(N, cluster_size, alias_fraction, num_threads,
-                               intrinsics, internal_time_read, time_read, internal_time_write, time_write);
+                               intrinsics, internal_time_read, time_read,
+                               internal_time_write, time_write);
 
     for (size_t j = 0; j < NUM_TESTS; ++j) {
-      internal_time_read_min[j] = internal_time_read_min[j] < internal_time_read[j] ? internal_time_read_min[j] : internal_time_read[j];
-      internal_time_write_min[j] = internal_time_write_min[j] < internal_time_write[j] ? internal_time_write_min[j] : internal_time_write[j];
-      time_read_min[j] = time_read_min[j] < time_read[j] ? time_read_min[j] : time_read[j];
-      time_write_min[j] = time_write_min[j] < time_write[j] ? time_write_min[j] : time_write[j];
+      internal_time_read_min[j] =
+          internal_time_read_min[j] < internal_time_read[j]
+              ? internal_time_read_min[j]
+              : internal_time_read[j];
+      internal_time_write_min[j] =
+          internal_time_write_min[j] < internal_time_write[j]
+              ? internal_time_write_min[j]
+              : internal_time_write[j];
+      time_read_min[j] =
+          time_read_min[j] < time_read[j] ? time_read_min[j] : time_read[j];
+      time_write_min[j] =
+          time_write_min[j] < time_write[j] ? time_write_min[j] : time_write[j];
     }
   }
 
@@ -498,19 +517,26 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   double factor;
   for (size_t j = 0; j < NUM_TESTS; ++j) {
 #ifdef SCALE_BW
-    if (j == 0) factor = 2.0;
-    else if (j < 6) factor = 3.0;
-    else factor = 4.0;
+    if (j == 0)
+      factor = 2.0;
+    else if (j < 6)
+      factor = 3.0;
+    else
+      factor = 4.0;
 #else
     factor = 2.0;
 #endif /* SCALE_BW */
 
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
-    printf("%4.1f / %4.1f | %4.1f / %4.1f  ", factor * bw_mult / (double)internal_time_read_min[j], factor * bw_mult / (double)time_read_min[j],
-           factor * bw_mult / (double)internal_time_write_min[j], factor * bw_mult / (double)time_write_min[j]);
+    printf("%4.1f / %4.1f | %4.1f / %4.1f  ",
+           factor * bw_mult / (double)internal_time_read_min[j],
+           factor * bw_mult / (double)time_read_min[j],
+           factor * bw_mult / (double)internal_time_write_min[j],
+           factor * bw_mult / (double)time_write_min[j]);
 #else
-    printf("%4.1f | %4.1f  ", factor * bw_mult / (double)time_read_min[j], factor * bw_mult / (double)time_write_min[j]);
-#endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */   
+    printf("%4.1f | %4.1f  ", factor * bw_mult / (double)time_read_min[j],
+           factor * bw_mult / (double)time_write_min[j]);
+#endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
   }
 
   printf("%s\n", all_pass ? "all pass" : "some FAILED");
@@ -551,29 +577,30 @@ extern int omp_get_num_threads();
 void stream(size_t N, size_t num_runs) {
   struct timespec start;
   uint64_t times[4][num_runs];
-  uint64_t avgtime[4] = {0}, maxtime[4] = {0}, mintime[4] = {UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
+  uint64_t avgtime[4] = {0}, maxtime[4] = {0},
+           mintime[4] = {UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
 
   double a[N], b[N], c[N];
 
   int t;
   char *label[4] = {"Copy:      ", "Scale:     ", "Add:       ", "Triad:     "};
-  double bytes[4] = {2 * sizeof(double) * N, 2 * sizeof(double) * N, 3 * sizeof(double) * N, 3 * sizeof(double) * N};
+  double bytes[4] = {2 * sizeof(double) * N, 2 * sizeof(double) * N,
+                     3 * sizeof(double) * N, 3 * sizeof(double) * N};
 
-#pragma omp parallel 
+#pragma omp parallel
   {
 #pragma omp master
     {
       t = omp_get_num_threads();
-      printf ("Number of Threads requested = %i\n", t);
+      printf("Number of Threads requested = %i\n", t);
     }
   }
 
   t = 0;
 #pragma omp parallel
-#pragma omp atomic 
+#pragma omp atomic
   t++;
   printf("Number of Threads counted = %i\n", t);
-
 
 #pragma omp parallel for
   for (size_t j = 0; j < N; ++j) {
@@ -593,19 +620,19 @@ void stream(size_t N, size_t num_runs) {
     for (size_t j = 0; j < N; j++)
       c[j] = a[j];
     times[0][i] = stop_timer(start);
-	
+
     start = start_timer();
 #pragma omp parallel for
     for (size_t j = 0; j < N; ++j)
       b[j] = scalar * c[j];
     times[1][i] = stop_timer(start);
-	
+
     start = start_timer();
 #pragma omp parallel for
     for (size_t j = 0; j < N; ++j)
       c[j] = a[j] + b[j];
     times[2][i] = stop_timer(start);
-	
+
     start = start_timer();
 #pragma omp parallel for
     for (size_t j = 0; j < N; ++j)
@@ -620,11 +647,14 @@ void stream(size_t N, size_t num_runs) {
       maxtime[j] = MAX(maxtime[j], times[j][i]);
     }
   }
-    
-  printf("N           Function    Best Rate GiB/s Avg time (ns)     Min time (ns)    Max time (ns)\n");
+
+  printf("N           Function    Best Rate GiB/s Avg time (ns)     Min time "
+         "(ns)    Max time (ns)\n");
   for (size_t j = 0; j < 4; ++j) {
     avgtime[j] = avgtime[j] / (double)(num_runs - 1);
-    printf("%-12ld %s %12.1f  %12ld  %12ld  %12ld\n", N, label[j], (bytes[j] / (1024.0 * 1024.0 * 1024.0)) / (mintime[j] / 1.0e9), avgtime[j], mintime[j], maxtime[j]);
+    printf("%-12ld %s %12.1f  %12ld  %12ld  %12ld\n", N, label[j],
+           (bytes[j] / (1024.0 * 1024.0 * 1024.0)) / (mintime[j] / 1.0e9),
+           avgtime[j], mintime[j], maxtime[j]);
   }
 }
 
@@ -667,9 +697,9 @@ int main(int argc, char **argv) {
 #endif
 
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
-  printf(
-      "Benchmark results (max internal/external read | max internal/external write bandwidth in GiB/s), N = %zu\n",
-      N);
+  printf("Benchmark results (max internal/external read | max "
+         "internal/external write bandwidth in GiB/s), N = %zu\n",
+         N);
 #else
   printf(
       "Benchmark results (max read | max write bandwidth in GiB/s), N = %zu\n",
@@ -687,7 +717,6 @@ int main(int argc, char **argv) {
 #ifdef USE_SVE
   run_benchmarks(N, cluster_size, alias_fraction, thread_counts, SVE);
 #endif /* USE_SVE */
-
 
 #ifdef USE_CLIENT
   // send quit request

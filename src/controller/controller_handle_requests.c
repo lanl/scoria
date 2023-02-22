@@ -96,7 +96,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
 #else
         double factor = 2.0;
 #endif /* SCALE_BW */
-       printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
+        printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
                req->client, req->N, mtime, factor * bw);
 #else
@@ -146,7 +146,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
 #else
         double factor = 2.0;
 #endif /* SCALE_BW */
-       printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
+        printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
                req->client, req->N, mtime, factor * bw);
 #else
@@ -192,11 +192,11 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
 #ifdef SCALE_BW
-        double factor = 2.0;
+      double factor = 2.0;
 #else
-        double factor = 4.0;
+      double factor = 4.0;
 #endif /* SCALE_BW */
-     printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
+      printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
              "Bandwidth: %f GiB/s\n",
              req->client, req->N, mtime, factor * bw);
 #else
@@ -312,7 +312,7 @@ c_status handle_write(struct controller *controller,
 #else
         double factor = 3.0;
 #endif /* SCALE_BW */
-       printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
+        printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
                req->client, req->N, mtime, factor * bw);
 #else
@@ -360,11 +360,11 @@ c_status handle_write(struct controller *controller,
     if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
 #ifdef SCALE_BW
-        double factor = 2.0;
+      double factor = 2.0;
 #else
-        double factor = 4.0;
+      double factor = 4.0;
 #endif /* SCALE_BW */
-     printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
+      printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
              "Bandwidth: %f GiB/s\n",
              req->client, req->N, mtime, factor * bw);
 #else
@@ -395,7 +395,8 @@ void *handler(void *args) {
     request_queue_fetch(requests, &req);
 
     if (controller->chatty)
-      printf("Controller: Client (%d): Request %d Detected of Type %d\n", tid, req.id, req.r_type);
+      printf("Controller: Client (%d): Request %d Detected of Type %d\n", tid,
+             req.id, req.r_type);
 
     switch (req.r_type) {
     case Read:
@@ -412,7 +413,7 @@ void *handler(void *args) {
       quit = 1;
       req.r_status = Ready;
       request_queue_put(completions, &req);
-      
+
       for (int i = 0; i < MAX_CLIENTS; ++i) {
         if (i != tid) {
           struct request req;
@@ -420,8 +421,9 @@ void *handler(void *args) {
           req.id = -1;
           req.client = tid;
           request_queue_put(&(controller->shared_completions_list->queues[i]),
-                        &req);
-          request_queue_put(&(controller->shared_requests_list->queues[i]), &req);
+                            &req);
+          request_queue_put(&(controller->shared_requests_list->queues[i]),
+                            &req);
         }
       }
       break;
@@ -432,7 +434,6 @@ void *handler(void *args) {
       printf("Controller: Client (%d): Invalid Request Type Detected\n", tid);
       quit = 1;
     }
-
   }
 
   if (stat != SCORIA_SUCCESS) {

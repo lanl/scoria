@@ -519,8 +519,8 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
     }
 
     all_pass &= run_test_suite(N, cluster_size, alias_fraction, num_threads,
-                               intrinsics, internal_time_read,
-                               time_read, internal_time_write, time_write);
+                               intrinsics, internal_time_read, time_read,
+                               internal_time_write, time_write);
 
     if (i >= ignore_first_num) {
       for (size_t j = 0; j < NUM_TESTS; ++j) {
@@ -536,8 +536,7 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   // we want to compute bandwidth in MiB/s, multiply data by number of tests
   // timed
   // Multiply by 2 since we read an array and write to another or vice versa
-  double bw_mult =
-      (double)(N * sizeof(double) * (num_runs - ignore_first_num));
+  double bw_mult = (double)(N * sizeof(double) * (num_runs - ignore_first_num));
   // now divide to get GiB and multiply by 1e9 because time is in ns
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 
@@ -551,9 +550,12 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   for (size_t j = 0; j < NUM_TESTS; ++j) {
 #ifdef SCALE_BW
     avg_factor = 37.0 / 11.0;
-    if (j == 0) factor = 2.0;
-    else if (j < 6) factor = 3.0;
-    else factor = 4.0;
+    if (j == 0)
+      factor = 2.0;
+    else if (j < 6)
+      factor = 3.0;
+    else
+      factor = 4.0;
 #else
     avg_factor = 2.0;
     factor = 2.0;
@@ -582,7 +584,8 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
          avg_factor * NUM_TESTS * bw_mult / (double)total_write,
          all_pass ? "all pass" : "some FAILED");
 #else
-  printf("%4.1f | %4.1f  %s\n", avg_factor * NUM_TESTS * bw_mult / (double)total_read,
+  printf("%4.1f | %4.1f  %s\n",
+         avg_factor * NUM_TESTS * bw_mult / (double)total_read,
          avg_factor * NUM_TESTS * bw_mult / (double)total_write,
          all_pass ? "all pass" : "some FAILED");
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
