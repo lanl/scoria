@@ -3,6 +3,11 @@
 ## Description
 Prototype testbed for various memory acceleration schemes focused on improving sparse memory accesses and scatter/gather performance through indirection arrays.
 
+Client/Controller design to service sparse memory requests (0, 1, and 2 levels of indirection)
+
+![image](https://user-images.githubusercontent.com/20432571/212427502-d881947b-fcc1-4297-8013-e18d3c0fc71a.png)
+
+
 ## Installation
 ```
 mkdir build
