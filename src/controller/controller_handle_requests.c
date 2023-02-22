@@ -11,9 +11,6 @@
 
 #include <stdio.h>
 
-int quit = 0;
-int tid = -1;
-
 void controller_status(c_status stat, struct request *req) {
   switch (stat) {
   case SCORIA_SUCCESS:
@@ -56,7 +53,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
 
   uint64_t mtime = 0;
 #ifdef Scoria_REQUIRE_TIMING
-  double bw_mult = (double)(2.0 * req->N * sizeof(double));
+  double bw_mult = (double)(req->N * sizeof(double));
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 #endif /* Scoria_REQUIRE_TIMING */
 
@@ -92,15 +89,21 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     if (stat != SCORIA_SUCCESS) {
       controller_status(stat, req);
     } else {
-      if (controller->chatty)
+      if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+        double factor = 2.0;
+#else
+        double factor = 2.0;
+#endif /* SCALE_BW */
         printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
-               req->client, req->N, mtime, bw);
+               req->client, req->N, mtime, factor * bw);
 #else
         printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
                req->N);
-#endif
+#endif /* Scoria_REQUIRE_TIMING */
+      }
     }
     return stat;
   }
@@ -136,15 +139,21 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     if (stat != SCORIA_SUCCESS) {
       controller_status(stat, req);
     } else {
-      if (controller->chatty)
+      if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+        double factor = 3.0;
+#else
+        double factor = 2.0;
+#endif /* SCALE_BW */
         printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
-               req->client, req->N, mtime, bw);
+               req->client, req->N, mtime, factor * bw);
 #else
         printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
                req->N);
 #endif /* Scoria_REQUIRE_TIMING */
+      }
     }
     return stat;
   }
@@ -180,15 +189,21 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
   if (stat != SCORIA_SUCCESS) {
     controller_status(stat, req);
   } else {
-    if (controller->chatty)
+    if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+      double factor = 2.0;
+#else
+      double factor = 4.0;
+#endif /* SCALE_BW */
       printf("Controller: Client(%d) Read Data with N: %ld Time (ns): %ld "
              "Bandwidth: %f GiB/s\n",
-             req->client, req->N, mtime, bw);
+             req->client, req->N, mtime, factor * bw);
 #else
       printf("Controller: Client(%d) Read Data with N: %ld\n", req->client,
              req->N);
 #endif /* Scoria_REQUIRE_TIMING */
+    }
   }
   return stat;
 }
@@ -203,7 +218,7 @@ c_status handle_write(struct controller *controller,
 
   uint64_t mtime = 0;
 #ifdef Scoria_REQUIRE_TIMING
-  double bw_mult = (double)(2.0 * req->N * sizeof(double));
+  double bw_mult = (double)(req->N * sizeof(double));
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 #endif /* Scoria_REQUIRE_TIMING */
 
@@ -239,15 +254,21 @@ c_status handle_write(struct controller *controller,
     if (stat != SCORIA_SUCCESS) {
       controller_status(stat, req);
     } else {
-      if (controller->chatty)
+      if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+        double factor = 2.0;
+#else
+        double factor = 2.0;
+#endif /* SCALE_BW */
         printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
-               req->client, req->N, mtime, bw);
+               req->client, req->N, mtime, factor * bw);
 #else
         printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
                req->N);
 #endif /* Scoria_REQUIRE_TIMING */
+      }
     }
 
     return stat;
@@ -284,15 +305,21 @@ c_status handle_write(struct controller *controller,
     if (stat != SCORIA_SUCCESS) {
       controller_status(stat, req);
     } else {
-      if (controller->chatty)
+      if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+        double factor = 2.0;
+#else
+        double factor = 3.0;
+#endif /* SCALE_BW */
         printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
                "Bandwidth: %f GiB/s\n",
-               req->client, req->N, mtime, bw);
+               req->client, req->N, mtime, factor * bw);
 #else
         printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
                req->N);
 #endif /* Scoria_REQUIRE_TIMING */
+      }
     }
 
     return stat;
@@ -330,15 +357,21 @@ c_status handle_write(struct controller *controller,
   if (stat != SCORIA_SUCCESS) {
     controller_status(stat, req);
   } else {
-    if (controller->chatty)
+    if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+      double factor = 2.0;
+#else
+      double factor = 4.0;
+#endif /* SCALE_BW */
       printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
              "Bandwidth: %f GiB/s\n",
-             req->client, req->N, mtime, bw);
+             req->client, req->N, mtime, factor * bw);
 #else
       printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
              req->N);
 #endif /* Scoria_REQUIRE_TIMING */
+    }
   }
 
   return stat;
@@ -347,13 +380,14 @@ c_status handle_write(struct controller *controller,
 void *handler(void *args) {
   struct thread_args *a = args;
 
-  size_t i = a->i;
+  int quit = 0;
+  int tid = a->id;
   struct controller *controller = a->controller;
 
   struct request_queue *requests =
-      &(controller->shared_requests_list->queues[i]);
+      &(controller->shared_requests_list->queues[tid]);
   struct request_queue *completions =
-      &(controller->shared_completions_list->queues[i]);
+      &(controller->shared_completions_list->queues[tid]);
 
   c_status stat = SCORIA_SUCCESS;
   while (!quit) {
@@ -361,37 +395,52 @@ void *handler(void *args) {
     request_queue_fetch(requests, &req);
 
     if (controller->chatty)
-      printf("Controller: Client (%ld): Request %d Detected\n", i, req.id);
+      printf("Controller: Client (%d): Request %d Detected of Type %d\n", tid,
+             req.id, req.r_type);
 
     switch (req.r_type) {
     case Read:
       stat = handle_read(controller, completions, &req);
+      if (stat != SCORIA_SUCCESS)
+        quit = 1;
       break;
     case Write:
       stat = handle_write(controller, completions, &req);
+      if (stat != SCORIA_SUCCESS)
+        quit = 1;
       break;
     case Quit:
-      tid = i;
       quit = 1;
       req.r_status = Ready;
       request_queue_put(completions, &req);
+
+      for (int i = 0; i < MAX_CLIENTS; ++i) {
+        if (i != tid) {
+          struct request req;
+          req.r_type = Kill;
+          req.id = -1;
+          req.client = tid;
+          request_queue_put(&(controller->shared_completions_list->queues[i]),
+                            &req);
+          request_queue_put(&(controller->shared_requests_list->queues[i]),
+                            &req);
+        }
+      }
       break;
     case Kill:
       quit = 1;
       break;
     default:
-      printf("Controller: Client (%ld): Invalid Request Type Detected\n", i);
-      tid = i;
-      quit = 1;
-    }
-
-    if (stat != SCORIA_SUCCESS) {
-      printf("Controller: Error detected\n");
-      printf("Quitting...\n");
+      printf("Controller: Client (%d): Invalid Request Type Detected\n", tid);
       quit = 1;
     }
   }
 
+  if (stat != SCORIA_SUCCESS) {
+    printf("Controller: Client (%d): Error detected\n", tid);
+    printf("Quitting...\n");
+    quit = 1;
+  }
   return NULL;
 }
 
@@ -400,8 +449,8 @@ void handle_requests(struct controller *controller) {
   pthread_t threads[MAX_CLIENTS];
   struct thread_args args[MAX_CLIENTS];
 
-  for (size_t i = 0; i < MAX_CLIENTS; ++i) {
-    args[i].i = i;
+  for (int i = 0; i < MAX_CLIENTS; ++i) {
+    args[i].id = i;
     args[i].controller = controller;
 
     int ret = pthread_create(&threads[i], NULL, handler, &args[i]);
@@ -409,26 +458,9 @@ void handle_requests(struct controller *controller) {
     assert(ret == 0);
   }
 
-  while (!quit) {
-    ;
-    ;
-  }
-
-  for (int i = 0; i < MAX_CLIENTS; ++i) {
-    if (i != tid) {
-      struct request req;
-      req.r_type = Kill;
-      req.id = -1;
-      req.client = tid;
-      request_queue_put(&(controller->shared_completions_list->queues[i]),
-                        &req);
-      request_queue_put(&(controller->shared_requests_list->queues[i]), &req);
-    }
-  }
-
   for (int i = 0; i < MAX_CLIENTS; ++i) {
     pthread_join(threads[i], NULL);
   }
 
-  printf("Controller: Quit Request Received from Client(%d)\n", tid);
+  printf("Controller: Quit Request Received from Client\n");
 }

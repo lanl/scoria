@@ -14,6 +14,7 @@
 #include "config.h"
 #include "kernels.h"
 #include "mytimer.h"
+#include "request.h"
 #include "shm_malloc.h"
 
 #ifdef SINGLE_ALLOC
@@ -22,11 +23,51 @@ size_t *ind1, *ind2, *tmp;
 #endif
 
 #ifdef USE_CLIENT
+#include <numa.h>
 struct client client;
 #else
 // use regular malloc and free if we're not using the client model
 #define shm_malloc malloc
 #define shm_free free
+#endif
+
+#ifdef USE_CLIENT
+struct thread_init_args {
+  int id;
+  int nthreads;
+  size_t pages;
+  int pgsize;
+  double *data;
+  size_t *ind1;
+  size_t *ind2;
+  size_t start, end;
+};
+
+void *thread_init(void *args) {
+  struct thread_init_args *a = args;
+
+  int status;
+
+  for (size_t i = 0; i < a->pages; ++i) {
+    int nodes[1] = {a->id < (a->nthreads / 2)};
+    numa_move_pages(0, 1,
+                    (void *)((uint8_t *)(&(a->data[a->start])) + a->pgsize),
+                    nodes, &status, 0);
+    numa_move_pages(0, 1,
+                    (void *)((uint8_t *)(&(a->ind1[a->start])) + a->pgsize),
+                    nodes, &status, 0);
+    numa_move_pages(0, 1,
+                    (void *)((uint8_t *)(&(a->ind2[a->start])) + a->pgsize),
+                    nodes, &status, 0);
+  }
+
+  for (size_t i = a->start; i < a->end; ++i) {
+    a->data[i] = 0.0;
+    a->ind1[i] = 0;
+    a->ind2[i] = 0;
+  }
+  return NULL;
+}
 #endif
 
 // mock API to interact with memory accelerator
@@ -268,20 +309,6 @@ int check_0_level(double *data, size_t N, uint64_t *internal_time_read,
   CHECK_IMPL(NULL, NULL, i)
 }
 
-int check_1_level(double *data, size_t N, const size_t *ind,
-                  uint64_t *internal_time_read, uint64_t *time_read,
-                  uint64_t *internal_time_write, uint64_t *time_write,
-                  size_t num_threads, i_type intrinsics) {
-  CHECK_IMPL(ind, NULL, ind[i])
-}
-
-int check_2_level(double *data, size_t N, const size_t *ind1,
-                  const size_t *ind2, uint64_t *internal_time_read,
-                  uint64_t *time_read, uint64_t *internal_time_write,
-                  uint64_t *time_write, size_t num_threads, i_type intrinsics) {
-  CHECK_IMPL(ind1, ind2, ind2[ind1[i]])
-}
-
 // shuffle in-place the given indices from indices[0] to indices[N-1]
 // using the modern Fisher-Yates shuffle (see
 // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle and
@@ -352,12 +379,14 @@ void reset(double *data, size_t *ind1, size_t *ind2, size_t N) {
   }
 }
 
-#define NUM_TESTS 11
+#define NUM_TESTS 1
 
 bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
                     size_t num_threads, i_type intrinsics,
                     uint64_t *internal_time_read, uint64_t *time_read,
                     uint64_t *internal_time_write, uint64_t *time_write) {
+  (void)cluster_size;
+  (void)alias_fraction;
   // initialize random number generator, use a specific seed to make every run
   // of the test suite use the same indirection
   srand48(42);
@@ -374,7 +403,38 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   double *data = (double *)shm_malloc(N * sizeof(double));
   size_t *ind1 = (size_t *)shm_malloc(N * sizeof(size_t));
   size_t *ind2 = (size_t *)shm_malloc(N * sizeof(size_t));
-#endif
+
+#ifdef USE_CLIENT
+  int pgsize = numa_pagesize();
+  size_t chunk_size = (N + num_threads - 1) / num_threads;
+  chunk_size = (chunk_size + (pgsize - 1)) & ~(pgsize - 1);
+  size_t pages = chunk_size / pgsize;
+
+  pthread_t threads[num_threads];
+  struct thread_init_args args[num_threads];
+
+  for (size_t i = 0; i < num_threads; ++i) {
+    args[i].id = i;
+    args[i].nthreads = num_threads;
+    args[i].pages = pages;
+    args[i].pgsize = pgsize;
+    args[i].data = data;
+    args[i].ind1 = ind1;
+    args[i].ind2 = ind2;
+    args[i].start = i * chunk_size;
+    args[i].end = MIN((i + 1) * chunk_size, N);
+
+    int ret = pthread_create(&threads[i], NULL, thread_init, &args[i]);
+    (void)ret;
+    assert(ret == 0);
+  }
+
+  for (size_t i = 0; i < num_threads; ++i) {
+    pthread_join(threads[i], NULL);
+  }
+#endif /* USE_CLIENT */
+
+#endif /* SINGLE_ALLOC */
 
   bool all_pass = true;
 
@@ -384,96 +444,6 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
                      check_0_level(data, N, internal_time_read + 0,
                                    time_read + 0, internal_time_write + 0,
                                    time_write + 0, num_threads, intrinsics));
-
-  // 1 level of indirection
-
-  // straight access
-  reset(data, ind1, ind2, N);
-  all_pass &= report("1-lev straight",
-                     check_1_level(data, N, ind1, internal_time_read + 1,
-                                   time_read + 1, internal_time_write + 1,
-                                   time_write + 1, num_threads, intrinsics));
-
-  // permutation (no aliases)
-  reset(data, ind1, ind2, N);
-  shuffle(ind1, N);
-  all_pass &= report("1-lev full shuffle no alias",
-                     check_1_level(data, N, ind1, internal_time_read + 2,
-                                   time_read + 2, internal_time_write + 2,
-                                   time_write + 2, num_threads, intrinsics));
-
-  reset(data, ind1, ind2, N);
-  clustered_shuffle(ind1, N, cluster_size);
-  all_pass &= report("1-lev clustered no alias",
-
-                     check_1_level(data, N, ind1, internal_time_read + 3,
-                                   time_read + 3, internal_time_write + 3,
-                                   time_write + 3, num_threads, intrinsics));
-
-  // with aliases
-  reset(data, ind1, ind2, N);
-  add_aliases(ind1, N, alias_fraction);
-  shuffle(ind1, N);
-  all_pass &= report("1-lev full shuffle with alias",
-                     check_1_level(data, N, ind1, internal_time_read + 4,
-                                   time_read + 4, internal_time_write + 4,
-                                   time_write + 4, num_threads, intrinsics));
-
-  reset(data, ind1, ind2, N);
-  add_clustered_aliases(ind1, N, alias_fraction, cluster_size);
-  clustered_shuffle(ind1, N, cluster_size);
-  all_pass &= report("1-lev clustered with alias",
-                     check_1_level(data, N, ind1, internal_time_read + 5,
-                                   time_read + 5, internal_time_write + 5,
-                                   time_write + 5, num_threads, intrinsics));
-
-  // 2 level of indirection
-
-  // straight access
-  reset(data, ind1, ind2, N);
-  all_pass &= report("2-lev straight",
-                     check_2_level(data, N, ind1, ind2, internal_time_read + 6,
-                                   time_read + 6, internal_time_write + 6,
-                                   time_write + 6, num_threads, intrinsics));
-
-  // permutation (no aliases)
-  reset(data, ind1, ind2, N);
-  shuffle(ind1, N);
-  shuffle(ind2, N);
-  all_pass &= report("2-lev full shuffle no alias",
-                     check_2_level(data, N, ind1, ind2, internal_time_read + 7,
-                                   time_read + 7, internal_time_write + 7,
-                                   time_write + 7, num_threads, intrinsics));
-
-  reset(data, ind1, ind2, N);
-  clustered_shuffle(ind1, N, cluster_size);
-  clustered_shuffle(ind2, N, cluster_size);
-  all_pass &= report("2-lev clustered no alias",
-                     check_2_level(data, N, ind1, ind2, internal_time_read + 8,
-                                   time_read + 8, internal_time_write + 8,
-                                   time_write + 8, num_threads, intrinsics));
-
-  // with aliases
-  reset(data, ind1, ind2, N);
-  add_aliases(ind1, N, alias_fraction);
-  add_aliases(ind2, N, alias_fraction);
-  shuffle(ind1, N);
-  shuffle(ind2, N);
-  all_pass &= report("2-lev full shuffle with alias",
-                     check_2_level(data, N, ind1, ind2, internal_time_read + 9,
-                                   time_read + 9, internal_time_write + 9,
-                                   time_write + 9, num_threads, intrinsics));
-
-  reset(data, ind1, ind2, N);
-  add_clustered_aliases(ind1, N, alias_fraction, cluster_size);
-  add_clustered_aliases(ind2, N, alias_fraction, cluster_size);
-  clustered_shuffle(ind1, N, cluster_size);
-  clustered_shuffle(ind2, N, cluster_size);
-  all_pass &= report("2-lev clustered with alias",
-                     check_2_level(data, N, ind1, ind2, internal_time_read + 10,
-                                   time_read + 10, internal_time_write + 10,
-                                   time_write + 10, num_threads, intrinsics));
-
 #ifndef SINGLE_ALLOC
   shm_free(data);
   shm_free(ind1);
@@ -483,30 +453,28 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   return all_pass;
 }
 
-#define NUM_THREAD_VARS 10
+#define NUM_THREAD_VARS 9
 void benchmark(size_t N, size_t cluster_size, double alias_fraction,
                size_t num_threads, i_type intrinsics) {
-  size_t num_runs = 5;
-  size_t ignore_first_num = 1;
+  size_t num_runs = 10;
 
   bool all_pass = true;
 
-  uint64_t internal_time_read[NUM_TESTS], internal_time_read_sum[NUM_TESTS];
-  uint64_t internal_time_write[NUM_TESTS], internal_time_write_sum[NUM_TESTS];
+  uint64_t internal_time_read_min[NUM_TESTS], internal_time_read[NUM_TESTS];
+  uint64_t internal_time_write_min[NUM_TESTS], internal_time_write[NUM_TESTS];
 
-  uint64_t time_read[NUM_TESTS], time_read_sum[NUM_TESTS];
-  uint64_t time_write[NUM_TESTS], time_write_sum[NUM_TESTS];
-
+  uint64_t time_read_min[NUM_TESTS], time_read[NUM_TESTS];
+  uint64_t time_write_min[NUM_TESTS], time_write[NUM_TESTS];
   for (size_t j = 0; j < NUM_TESTS; ++j) {
+    internal_time_read_min[j] = UINT64_MAX;
+    internal_time_write_min[j] = UINT64_MAX;
+    time_read_min[j] = UINT64_MAX;
+    time_write_min[j] = UINT64_MAX;
+
     internal_time_read[j] = 0;
     internal_time_write[j] = 0;
-    internal_time_read_sum[j] = 0;
-    internal_time_write_sum[j] = 0;
-
     time_read[j] = 0;
     time_write[j] = 0;
-    time_read_sum[j] = 0;
-    time_write_sum[j] = 0;
   }
 
   for (size_t i = 0; i < num_runs; ++i) {
@@ -522,13 +490,19 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
                                intrinsics, internal_time_read, time_read,
                                internal_time_write, time_write);
 
-    if (i >= ignore_first_num) {
-      for (size_t j = 0; j < NUM_TESTS; ++j) {
-        internal_time_read_sum[j] += internal_time_read[j];
-        internal_time_write_sum[j] += internal_time_write[j];
-        time_read_sum[j] += time_read[j];
-        time_write_sum[j] += time_write[j];
-      }
+    for (size_t j = 0; j < NUM_TESTS; ++j) {
+      internal_time_read_min[j] =
+          internal_time_read_min[j] < internal_time_read[j]
+              ? internal_time_read_min[j]
+              : internal_time_read[j];
+      internal_time_write_min[j] =
+          internal_time_write_min[j] < internal_time_write[j]
+              ? internal_time_write_min[j]
+              : internal_time_write[j];
+      time_read_min[j] =
+          time_read_min[j] < time_read[j] ? time_read_min[j] : time_read[j];
+      time_write_min[j] =
+          time_write_min[j] < time_write[j] ? time_write_min[j] : time_write[j];
     }
   }
 
@@ -536,20 +510,13 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
   // we want to compute bandwidth in MiB/s, multiply data by number of tests
   // timed
   // Multiply by 2 since we read an array and write to another or vice versa
-  double bw_mult = (double)(N * sizeof(double) * (num_runs - ignore_first_num));
+  double bw_mult = (double)(N * sizeof(double));
   // now divide to get GiB and multiply by 1e9 because time is in ns
   bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
 
-  uint64_t internal_total_read = 0;
-  uint64_t internal_total_write = 0;
-  uint64_t total_read = 0;
-  uint64_t total_write = 0;
-
   double factor;
-  double avg_factor = 2.0;
   for (size_t j = 0; j < NUM_TESTS; ++j) {
 #ifdef SCALE_BW
-    avg_factor = 37.0 / 11.0;
     if (j == 0)
       factor = 2.0;
     else if (j < 6)
@@ -557,38 +524,22 @@ void benchmark(size_t N, size_t cluster_size, double alias_fraction,
     else
       factor = 4.0;
 #else
-    avg_factor = 2.0;
     factor = 2.0;
 #endif /* SCALE_BW */
 
-    internal_total_read += internal_time_read_sum[j];
-    internal_total_write += internal_time_write_sum[j];
-    total_read += time_read_sum[j];
-    total_write += time_write_sum[j];
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
     printf("%4.1f / %4.1f | %4.1f / %4.1f  ",
-           factor * bw_mult / (double)internal_time_read_sum[j],
-           factor * bw_mult / (double)time_read_sum[j],
-           factor * bw_mult / (double)internal_time_write_sum[j],
-           factor * bw_mult / (double)time_write_sum[j]);
+           factor * bw_mult / (double)internal_time_read_min[j],
+           factor * bw_mult / (double)time_read_min[j],
+           factor * bw_mult / (double)internal_time_write_min[j],
+           factor * bw_mult / (double)time_write_min[j]);
 #else
-    printf("%4.1f | %4.1f  ", factor * bw_mult / (double)time_read_sum[j],
-           factor * bw_mult / (double)time_write_sum[j]);
+    printf("%4.1f | %4.1f  ", factor * bw_mult / (double)time_read_min[j],
+           factor * bw_mult / (double)time_write_min[j]);
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
   }
-#if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
-  printf("%4.1f / %4.1f | %4.1f / %4.1f  %s\n",
-         avg_factor * NUM_TESTS * bw_mult / (double)internal_total_read,
-         avg_factor * NUM_TESTS * bw_mult / (double)total_read,
-         avg_factor * NUM_TESTS * bw_mult / (double)internal_total_write,
-         avg_factor * NUM_TESTS * bw_mult / (double)total_write,
-         all_pass ? "all pass" : "some FAILED");
-#else
-  printf("%4.1f | %4.1f  %s\n",
-         avg_factor * NUM_TESTS * bw_mult / (double)total_read,
-         avg_factor * NUM_TESTS * bw_mult / (double)total_write,
-         all_pass ? "all pass" : "some FAILED");
-#endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
+
+  printf("%s\n", all_pass ? "all pass" : "some FAILED");
 }
 
 void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
@@ -601,25 +552,109 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
     printf("\nRunning tests WITHOUT AVX or SVE intrinsics\n");
   }
 
-  const char *names[NUM_TESTS] = {"0-str",  "1-str", "1-FnoA", "1-CnoA",
-                                  "1-FA",   "1-CA",  "2-str",  "2-FnoA",
-                                  "2-CnoA", "2-FA",  "2-CA"};
+  const char *names[NUM_TESTS] = {"0-str"};
   printf("%8s  ", "Threads");
 
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
   for (size_t j = 0; j < NUM_TESTS; ++j) {
     printf("%25s  ", names[j]);
   }
-  printf("%25s\n", "Total");
+  printf("\n");
 #else
   for (size_t j = 0; j < NUM_TESTS; ++j) {
     printf("%11s  ", names[j]);
   }
-  printf("%11s\n", "Total");
+  printf("\n");
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
 
   for (size_t t = 0; t < NUM_THREAD_VARS; ++t) {
     benchmark(N, cluster_size, alias_fraction, thread_counts[t], intrinsics);
+  }
+}
+
+extern int omp_get_num_threads();
+
+void stream(size_t N, size_t num_runs) {
+  struct timespec start;
+  uint64_t times[4][num_runs];
+  uint64_t avgtime[4] = {0}, maxtime[4] = {0},
+           mintime[4] = {UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
+
+  double a[N], b[N], c[N];
+
+  int t;
+  char *label[4] = {"Copy:      ", "Scale:     ", "Add:       ", "Triad:     "};
+  double bytes[4] = {2 * sizeof(double) * N, 2 * sizeof(double) * N,
+                     3 * sizeof(double) * N, 3 * sizeof(double) * N};
+
+#pragma omp parallel
+  {
+#pragma omp master
+    {
+      t = omp_get_num_threads();
+      printf("Number of Threads requested = %i\n", t);
+    }
+  }
+
+  t = 0;
+#pragma omp parallel
+#pragma omp atomic
+  t++;
+  printf("Number of Threads counted = %i\n", t);
+
+#pragma omp parallel for
+  for (size_t j = 0; j < N; ++j) {
+    a[j] = 1.0;
+    b[j] = 2.0;
+    c[j] = 0.0;
+  }
+
+#pragma omp parallel for
+  for (size_t j = 0; j < N; ++j)
+    a[j] = 2.0E0 * a[j];
+
+  double scalar = 3.0;
+  for (size_t i = 0; i < num_runs; ++i) {
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; j++)
+      c[j] = a[j];
+    times[0][i] = stop_timer(start);
+
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; ++j)
+      b[j] = scalar * c[j];
+    times[1][i] = stop_timer(start);
+
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; ++j)
+      c[j] = a[j] + b[j];
+    times[2][i] = stop_timer(start);
+
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; ++j)
+      a[j] = b[j] + scalar * c[j];
+    times[3][i] = stop_timer(start);
+  }
+
+  for (size_t i = 1; i < num_runs; ++i) {
+    for (size_t j = 0; j < 4; ++j) {
+      avgtime[j] = avgtime[j] + times[j][i];
+      mintime[j] = MIN(mintime[j], times[j][i]);
+      maxtime[j] = MAX(maxtime[j], times[j][i]);
+    }
+  }
+
+  printf("N           Function    Best Rate GiB/s Avg time (ns)     Min time "
+         "(ns)    Max time (ns)\n");
+  for (size_t j = 0; j < 4; ++j) {
+    avgtime[j] = avgtime[j] / (double)(num_runs - 1);
+    printf("%-12ld %s %12.1f  %12ld  %12ld  %12ld\n", N, label[j],
+           (bytes[j] / (1024.0 * 1024.0 * 1024.0)) / (mintime[j] / 1.0e9),
+           avgtime[j], mintime[j], maxtime[j]);
   }
 }
 
@@ -634,9 +669,11 @@ int main(int argc, char **argv) {
     printf("Running with double buffer of length: %zu\n", N);
   }
 
+  stream(N, 10);
+
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
-  size_t thread_counts[NUM_THREAD_VARS] = {0, 1, 2, 4, 8, 16, 22, 32, 44, 88};
+  size_t thread_counts[NUM_THREAD_VARS] = {1, 2, 4, 8, 16, 22, 32, 44, 88};
 
 #ifdef USE_CLIENT
   printf("Running using the memory controller, which must be started "
@@ -657,17 +694,16 @@ int main(int argc, char **argv) {
 
   // doesn't have to be shared memory
   tmp = (size_t *)malloc(4 * N * sizeof(size_t));
-
 #endif
 
 #if defined(USE_CLIENT) && defined(Scoria_REQUIRE_TIMING)
-  printf("Benchmark results (average internal/external read | average "
+  printf("Benchmark results (max internal/external read | max "
          "internal/external write bandwidth in GiB/s), N = %zu\n",
          N);
 #else
-  printf("Benchmark results (average read | average write bandwidth in GiB/s), "
-         "N = %zu\n",
-         N);
+  printf(
+      "Benchmark results (max read | max write bandwidth in GiB/s), N = %zu\n",
+      N);
 #endif /* USE_CLIENT && Scoria_REQUIRE_TIMING */
   printf(" 0|1|2: number of levels of indirection\n");
   printf("   str: straight access\n");
