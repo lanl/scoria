@@ -535,6 +535,85 @@ void run_benchmarks(size_t N, size_t cluster_size, double alias_fraction,
 
   for (size_t t = 0; t < NUM_THREAD_VARS; ++t) {
     benchmark(N, cluster_size, alias_fraction, thread_counts[t], use_avx);
+extern int omp_get_num_threads();
+
+void stream(size_t N, size_t num_runs) {
+  struct timespec start;
+  uint64_t times[4][num_runs];
+  uint64_t avgtime[4] = {0}, maxtime[4] = {0}, mintime[4] = {UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX};
+
+  double a[N], b[N], c[N];
+
+  int t;
+  char *label[4] = {"Copy:      ", "Scale:     ", "Add:       ", "Triad:     "};
+  double bytes[4] = {2 * sizeof(double) * N, 2 * sizeof(double) * N, 3 * sizeof(double) * N, 3 * sizeof(double) * N};
+
+#pragma omp parallel 
+  {
+#pragma omp master
+    {
+      t = omp_get_num_threads();
+      printf ("Number of Threads requested = %i\n", t);
+    }
+  }
+
+  t = 0;
+#pragma omp parallel
+#pragma omp atomic 
+  t++;
+  printf("Number of Threads counted = %i\n", t);
+
+
+#pragma omp parallel for
+  for (size_t j = 0; j < N; ++j) {
+    a[j] = 1.0;
+    b[j] = 2.0;
+    c[j] = 0.0;
+  }
+
+#pragma omp parallel for
+  for (size_t j = 0; j < N; ++j)
+    a[j] = 2.0E0 * a[j];
+
+  double scalar = 3.0;
+  for (size_t i = 0; i < num_runs; ++i) {
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; j++)
+      c[j] = a[j];
+    times[0][i] = stop_timer(start);
+	
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; ++j)
+      b[j] = scalar * c[j];
+    times[1][i] = stop_timer(start);
+	
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; ++j)
+      c[j] = a[j] + b[j];
+    times[2][i] = stop_timer(start);
+	
+    start = start_timer();
+#pragma omp parallel for
+    for (size_t j = 0; j < N; ++j)
+      a[j] = b[j] + scalar * c[j];
+    times[3][i] = stop_timer(start);
+  }
+
+  for (size_t i = 1; i < num_runs; ++i) {
+    for (size_t j = 0; j < 4; ++j) {
+      avgtime[j] = avgtime[j] + times[j][i];
+      mintime[j] = MIN(mintime[j], times[j][i]);
+      maxtime[j] = MAX(maxtime[j], times[j][i]);
+    }
+  }
+    
+  printf("N           Function    Best Rate GiB/s Avg time (ns)     Min time (ns)    Max time (ns)\n");
+  for (size_t j = 0; j < 4; ++j) {
+    avgtime[j] = avgtime[j] / (double)(num_runs - 1);
+    printf("%-12ld %s %12.1f  %12ld  %12ld  %12ld\n", N, label[j], (bytes[j] / (1024.0 * 1024.0 * 1024.0)) / (mintime[j] / 1.0e9), avgtime[j], mintime[j], maxtime[j]);
   }
 }
 
@@ -548,6 +627,8 @@ int main(int argc, char **argv) {
     N = (size_t)strtoumax(argv[1], &nptr, 10);
     printf("Running with double buffer of length: %zu\n", N);
   }
+
+  stream(N, 10);
 
   size_t cluster_size = 32;
   double alias_fraction = 0.1;
