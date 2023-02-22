@@ -15,7 +15,8 @@ typedef enum _controller_status {
   SCORIA_AVX_READ_FAIL = -3,
   SCORIA_AVX_WRITE_FAIL = -4,
   SCORIA_SVE_READ_FAIL = -5,
-  SCORIA_SVE_WRITE_FAIL = -6
+  SCORIA_SVE_WRITE_FAIL = -6,
+  SCORIA_INTRINSIC_EXIST = -7
 } c_status;
 
 struct controller {
