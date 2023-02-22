@@ -1,8 +1,8 @@
 #ifndef MYTIMER_H
 #define MYTIMER_H
 
-#include <time.h>
 #include <stdint.h>
+#include <time.h>
 
 struct timespec start_timer();
 uint64_t stop_timer(struct timespec start_time);

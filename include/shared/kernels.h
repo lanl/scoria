@@ -176,7 +176,7 @@ FORCE_INLINE c_status read_single_thread_0(double *res, const double *buffer,
     return SCORIA_SUCCESS;
   } else {
     return SCORIA_INTRINSIC_EXIST;
-  } 
+  }
 }
 
 FORCE_INLINE c_status read_single_thread_1(double *res, const double *buffer,
@@ -200,7 +200,8 @@ FORCE_INLINE c_status read_single_thread_1(double *res, const double *buffer,
 
 FORCE_INLINE c_status read_single_thread_2(double *res, const double *buffer,
                                            size_t N, const size_t *ind1,
-                                           const size_t *ind2, i_type intrinsic_type) {
+                                           const size_t *ind2,
+                                           i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
     READ_2_AVX(buffer, res, ind1, ind2, 0, N)
     return AVX_READ_STATUS;
@@ -256,7 +257,8 @@ FORCE_INLINE c_status write_single_thread_1(double *buffer, const double *input,
 
 FORCE_INLINE c_status write_single_thread_2(double *buffer, const double *input,
                                             size_t N, const size_t *ind1,
-                                            const size_t *ind2, i_type intrinsic_type) {
+                                            const size_t *ind2,
+                                            i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
     WRITE_2_AVX(buffer, input, ind1, ind2, 0, N)
     return AVX_WRITE_STATUS;
@@ -344,16 +346,15 @@ FORCE_INLINE c_status read_multi_thread_0(double *res, const double *buffer,
                                           size_t N, size_t n_threads,
                                           i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_0,
-                  read_th_0_avx, { args[i].res = res; });
-  }
-  else if (intrinsic_type == SVE) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0_sve, { args[i].res = res; });
-  }
-  else if (intrinsic_type == NONE) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0, { args[i].res = res; });
-  }
-  else {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0_avx,
+                    { args[i].res = res; });
+  } else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0_sve,
+                    { args[i].res = res; });
+  } else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_0, read_th_0,
+                    { args[i].res = res; });
+  } else {
     return SCORIA_INTRINSIC_EXIST;
   }
 }
@@ -391,29 +392,24 @@ void *read_th_1_sve(void *args) {
 
 FORCE_INLINE c_status read_multi_thread_1(double *res, const double *buffer,
                                           size_t N, const size_t *ind1,
-                                          size_t n_threads, i_type intrinsic_type) {
+                                          size_t n_threads,
+                                          i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_1,
-                    read_th_1_avx, {
-                    args[i].res = res;
-                    args[i].ind1 = ind1;
-                  });
-  }
-  else if (intrinsic_type == SVE) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_1,
-                    read_th_1_sve, {
-                    args[i].res = res;
-                    args[i].ind1 = ind1;
-                  });
-  }
-  else if (intrinsic_type == NONE) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_1,
-                    read_th_1, {
-                    args[i].res = res;
-                    args[i].ind1 = ind1;
-                  });
-  }
-  else {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_1, read_th_1_avx, {
+      args[i].res = res;
+      args[i].ind1 = ind1;
+    });
+  } else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_1, read_th_1_sve, {
+      args[i].res = res;
+      args[i].ind1 = ind1;
+    });
+  } else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_1, read_th_1, {
+      args[i].res = res;
+      args[i].ind1 = ind1;
+    });
+  } else {
     return SCORIA_INTRINSIC_EXIST;
   }
 }
@@ -454,30 +450,24 @@ FORCE_INLINE c_status read_multi_thread_2(double *res, const double *buffer,
                                           const size_t *ind2, size_t n_threads,
                                           i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
-  THREAD_TEMPLATE(N, n_threads, read_th_args_2,
-                    read_th_2_avx, {
-                    args[i].res = res;
-                    args[i].ind1 = ind1;
-                    args[i].ind2 = ind2;
-                  });
-  }
-  else if (intrinsic_type == SVE) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_2,
-                    read_th_2_sve, {
-                    args[i].res = res;
-                    args[i].ind1 = ind1;
-                    args[i].ind2 = ind2;
-                  });
-  }
-  else if (intrinsic_type == NONE) {
-    THREAD_TEMPLATE(N, n_threads, read_th_args_2,
-                    read_th_2, {
-                    args[i].res = res;
-                    args[i].ind1 = ind1;
-                    args[i].ind2 = ind2;
-                  });
-  }
-  else {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_2, read_th_2_avx, {
+      args[i].res = res;
+      args[i].ind1 = ind1;
+      args[i].ind2 = ind2;
+    });
+  } else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_2, read_th_2_sve, {
+      args[i].res = res;
+      args[i].ind1 = ind1;
+      args[i].ind2 = ind2;
+    });
+  } else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, read_th_args_2, read_th_2, {
+      args[i].res = res;
+      args[i].ind1 = ind1;
+      args[i].ind2 = ind2;
+    });
+  } else {
     return SCORIA_INTRINSIC_EXIST;
   }
 }
@@ -516,21 +506,15 @@ FORCE_INLINE c_status write_multi_thread_0(double *buffer, const double *input,
                                            size_t N, size_t n_threads,
                                            i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_0,
-                  write_th_0_avx,
-                  { args[i].input = input; });
-  }
-  else if (intrinsic_type == SVE) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_0,
-                  write_th_0_sve,
-                  { args[i].input = input; });
-  }
-  else if (intrinsic_type == NONE) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_0,
-                  write_th_0,
-                  { args[i].input = input; });
-  }
-  else {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_0, write_th_0_avx,
+                    { args[i].input = input; });
+  } else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_0, write_th_0_sve,
+                    { args[i].input = input; });
+  } else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_0, write_th_0,
+                    { args[i].input = input; });
+  } else {
     return SCORIA_INTRINSIC_EXIST;
   }
 }
@@ -571,27 +555,21 @@ c_status write_multi_thread_1(double *buffer, const double *input, size_t N,
                               const size_t *ind1, size_t n_threads,
                               i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_1,
-                    write_th_1_avx, {
-                    args[i].input = input;
-                    args[i].ind1 = ind1;
-                  });
-  }
-  else if (intrinsic_type == SVE) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_1,
-                    write_th_1_sve, {
-                    args[i].input = input;
-                    args[i].ind1 = ind1;
-                  });
-  }
-  else if (intrinsic_type == NONE) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_1,
-                    write_th_1, {
-                    args[i].input = input;
-                    args[i].ind1 = ind1;
-                  });
-  }
-  else {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_1, write_th_1_avx, {
+      args[i].input = input;
+      args[i].ind1 = ind1;
+    });
+  } else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_1, write_th_1_sve, {
+      args[i].input = input;
+      args[i].ind1 = ind1;
+    });
+  } else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_1, write_th_1, {
+      args[i].input = input;
+      args[i].ind1 = ind1;
+    });
+  } else {
     return SCORIA_INTRINSIC_EXIST;
   }
 }
@@ -627,36 +605,29 @@ void *write_th_2_sve(void *args) {
   return NULL;
 }
 
-
 FORCE_INLINE c_status write_multi_thread_2(double *buffer, const double *input,
                                            size_t N, const size_t *ind1,
                                            const size_t *ind2, size_t n_threads,
                                            i_type intrinsic_type) {
   if (intrinsic_type == AVX) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_2,
-                    write_th_2_avx, {
-                    args[i].input = input;
-                    args[i].ind1 = ind1;
-                    args[i].ind2 = ind2;
-                  });
-  }
-  else if (intrinsic_type == SVE) {
- THREAD_TEMPLATE(N, n_threads, write_th_args_2,
-                    write_th_2_sve, {
-                    args[i].input = input;
-                    args[i].ind1 = ind1;
-                    args[i].ind2 = ind2;
-                  });
-  }
-  else if (intrinsic_type == NONE) {
-    THREAD_TEMPLATE(N, n_threads, write_th_args_2,
-                    write_th_2, {
-                    args[i].input = input;
-                    args[i].ind1 = ind1;
-                    args[i].ind2 = ind2;
-                  });
-  }
-  else {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_2, write_th_2_avx, {
+      args[i].input = input;
+      args[i].ind1 = ind1;
+      args[i].ind2 = ind2;
+    });
+  } else if (intrinsic_type == SVE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_2, write_th_2_sve, {
+      args[i].input = input;
+      args[i].ind1 = ind1;
+      args[i].ind2 = ind2;
+    });
+  } else if (intrinsic_type == NONE) {
+    THREAD_TEMPLATE(N, n_threads, write_th_args_2, write_th_2, {
+      args[i].input = input;
+      args[i].ind1 = ind1;
+      args[i].ind2 = ind2;
+    });
+  } else {
     return SCORIA_INTRINSIC_EXIST;
   }
 }

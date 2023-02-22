@@ -12,6 +12,7 @@ struct timespec start_timer() {
 uint64_t stop_timer(struct timespec start_time) {
   struct timespec end_time;
   clock_gettime(CLOCK_MONOTONIC, &end_time);
-  uint64_t diffInNanos = (end_time.tv_sec - start_time.tv_sec) * (uint64_t)1e9 + (end_time.tv_nsec - start_time.tv_nsec);
+  uint64_t diffInNanos = (end_time.tv_sec - start_time.tv_sec) * (uint64_t)1e9 +
+                         (end_time.tv_nsec - start_time.tv_nsec);
   return diffInNanos;
 }

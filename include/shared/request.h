@@ -11,11 +11,7 @@
 
 typedef enum { Read, Write, Quit, Kill } request_type;
 typedef enum { Waiting, Ready } request_status;
-typedef enum intrinsic_type {
-  NONE = 0,
-  AVX = 1,
-  SVE = 2
-} i_type;
+typedef enum intrinsic_type { NONE = 0, AVX = 1, SVE = 2 } i_type;
 
 struct request {
   int client;
@@ -33,7 +29,7 @@ struct request {
   const size_t *ind1;
   const size_t *ind2;
   size_t nthreads;
-  
+
   i_type intrinsics;
 
   size_t offset;
