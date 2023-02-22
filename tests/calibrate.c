@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <numa.h>
 
 #include "client.h"
 #include "client_cleanup.h"
@@ -32,6 +31,7 @@ struct client client;
 #define shm_free free
 #endif
 
+#ifdef USE_CLIENT
 struct thread_init_args {
   int id;
   int nthreads;
@@ -50,9 +50,9 @@ void *thread_init(void *args) {
 
   for (size_t i = 0; i < a->pages; ++i) {
     int nodes[1] = {a->id < (a->nthreads / 2)};
-    numa_move_pages(0, 1, (void *)(&(a->data[a->start])) + a->pgsize, nodes, &status, 0);
-    numa_move_pages(0, 1, (void *)(&(a->ind1[a->start])) + a->pgsize, nodes, &status, 0);
-    numa_move_pages(0, 1, (void *)(&(a->ind2[a->start])) + a->pgsize, nodes, &status, 0);
+    numa_move_pages(0, 1, (void *)((uint8_t *)(&(a->data[a->start])) + a->pgsize), nodes, &status, 0);
+    numa_move_pages(0, 1, (void *)((uint8_t*)(&(a->ind1[a->start])) + a->pgsize), nodes, &status, 0);
+    numa_move_pages(0, 1, (void *)((uint8_t*)(&(a->ind2[a->start])) + a->pgsize), nodes, &status, 0);
   }
 
   for (size_t i = a->start; i < a->end; ++i) {
@@ -395,7 +395,7 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   size_t *ind1 = (size_t *)shm_malloc(N * sizeof(size_t));
   size_t *ind2 = (size_t *)shm_malloc(N * sizeof(size_t));
 
-
+#ifdef USE_CLIENT
   int pgsize = numa_pagesize();
   size_t chunk_size = (N + num_threads - 1) / num_threads;
   chunk_size = (chunk_size + (pgsize - 1)) & ~(pgsize - 1);
@@ -423,8 +423,9 @@ bool run_test_suite(size_t N, size_t cluster_size, double alias_fraction,
   for (size_t i = 0; i < num_threads; ++i) {
     pthread_join(threads[i], NULL);
   }
+#endif /* USE_CLIENT */
 
-#endif
+#endif /* SINGLE_ALLOC */
 
   bool all_pass = true;
 
