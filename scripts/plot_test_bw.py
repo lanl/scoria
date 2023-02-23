@@ -74,9 +74,9 @@ def plot_test_bw(in_file, out_file):
             modifier = 'WITHOUT_AVX_'
         else:
             modifier = 'AVX_'
-
-        out_file = out_file.split('/')
-        out_file[-1] = "WITHOUT_AVX_" + out_file[-1]
-        figname = '/'.join(out_file)
+       
+        figname = out_file.split('/')
+        figname[-1] = modifier + figname[-1]
+        figname = '/'.join(figname)
 
         plt.savefig(figname)

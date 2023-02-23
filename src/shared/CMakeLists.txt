@@ -8,4 +8,5 @@ add_compile_options(-Wall -Wextra -pedantic -Werror)
 set(SHARED_SOURCE_FILES ${SHARED_SOURCE_FILES} 
                         ${CMAKE_CURRENT_SOURCE_DIR}/request.c 
                         ${CMAKE_CURRENT_SOURCE_DIR}/utils.c
+                        ${CMAKE_CURRENT_SOURCE_DIR}/mytimer.c
                         PARENT_SCOPE)
