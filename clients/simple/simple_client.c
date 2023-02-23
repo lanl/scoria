@@ -12,7 +12,7 @@
 
 void place_requests(struct client *client) {
   // Allocate Buffer
-  double *A = shm_malloc(1024 * sizeof(int));
+  double *A = shm_malloc(1024 * sizeof(double));
 
   if (client->chatty)
     printf("Client(%d): Received Pointer to Allocated Memory: %p\n", client->id,
