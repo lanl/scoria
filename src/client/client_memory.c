@@ -84,3 +84,30 @@ void scoria_write(struct client *client, void *buffer, const size_t N,
 
   scoria_put_request(client, req);
 }
+
+void scoria_writeadd(struct client *client, void *buffer, const size_t N,
+                     const void *input, const size_t *ind1, const size_t *ind2,
+                     size_t num_threads, i_type intrinsics,
+                     struct request *req) {
+  if (client->chatty)
+    printf("Client(%d): Writing and Adding Buffer\n", client->id);
+
+  req->client = client->id;
+  req->r_type = WriteAdd;
+  req->nsecs = 0.0;
+  req->output = buffer;
+  req->input = input;
+  req->N = N;
+  req->ind1 = ind1;
+  req->ind2 = ind2;
+  req->nthreads = num_threads;
+  req->intrinsics = intrinsics;
+  req->id = rid;
+  rid++;
+
+  if (client->chatty)
+    printf("Client(%d): Created Request Object: Client: %d ID: %d Type: %d\n",
+           client->id, req->client, req->id, req->r_type);
+
+  scoria_put_request(client, req);
+}

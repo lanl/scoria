@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
 
-add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-prototypes -O3 -g)
+add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-prototypes -O3)
 
 if(Scoria_REQUIRE_AVX)
   message(STATUS "Building with AVX support")
@@ -28,6 +28,7 @@ include_directories(include/client)
 include_directories(include/posix)
 include_directories(include/shared)
 include_directories(include/uthash)
+include_directories(src/shm_malloc)
 
 add_executable(scoria controller.c ${CONTROLLER_SOURCE_FILES} ${SHARED_SOURCE_FILES})
 
