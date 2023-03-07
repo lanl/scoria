@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef enum { Read, Write, Quit, Kill } request_type;
+typedef enum { Read, Write, WriteAdd, Quit, Kill } request_type;
 typedef enum { Waiting, Ready } request_status;
 typedef enum intrinsic_type { NONE = 0, AVX = 1, SVE = 2 } i_type;
 
@@ -31,7 +31,7 @@ struct request {
   size_t nthreads;
 
   i_type intrinsics;
-  
+
   size_t offset;
   double value;
 

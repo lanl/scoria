@@ -377,6 +377,176 @@ c_status handle_write(struct controller *controller,
   return stat;
 }
 
+c_status handle_writeadd(struct controller *controller,
+                         struct request_queue *queue, struct request *req) {
+  if (controller->chatty)
+    printf("Controller: Received Request Object: Client: %d ID: %d Type: %d "
+           "Pointer: %p Input Pointer: %p N: %ld\n",
+           req->client, req->id, req->r_type, (void *)req->output,
+           (void *)req->input, req->N);
+
+  uint64_t mtime = 0;
+#ifdef Scoria_REQUIRE_TIMING
+  double bw_mult = (double)(req->N * sizeof(double));
+  bw_mult *= 1e9 / (1024.0 * 1024.0 * 1024.0);
+#endif /* Scoria_REQUIRE_TIMING */
+
+  c_status stat = SCORIA_SUCCESS;
+
+  if (req->ind1 == NULL) {
+    assert(req->ind2 == NULL);
+    if (req->nthreads == 0) {
+      TIME(
+          {
+            stat = writeadd_single_thread_0(req->output, req->input, req->N,
+                                            req->intrinsics);
+          },
+          mtime)
+    } else {
+      TIME(
+          {
+            stat = writeadd_multi_thread_0(req->output, req->input, req->N,
+                                           req->nthreads, req->intrinsics);
+          },
+          mtime)
+    }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
+
+    req->r_status = Ready;
+
+    request_queue_put(queue, req);
+
+    if (stat != SCORIA_SUCCESS) {
+      controller_status(stat, req);
+    } else {
+      if (controller->chatty) {
+#ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+        double factor = 2.0;
+#else
+        double factor = 2.0;
+#endif /* SCALE_BW */
+        printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
+               "Bandwidth: %f GiB/s\n",
+               req->client, req->N, mtime, factor * bw);
+#else
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
+               req->N);
+#endif /* Scoria_REQUIRE_TIMING */
+      }
+    }
+
+    return stat;
+  }
+
+  if (req->ind2 == NULL) {
+    assert(req->ind1 != NULL);
+    if (req->nthreads == 0) {
+      TIME(
+          {
+            stat = writeadd_single_thread_1(req->output, req->input, req->N,
+                                            req->ind1, req->intrinsics);
+          },
+          mtime)
+    } else {
+      TIME(
+          {
+            stat = writeadd_multi_thread_1(req->output, req->input, req->N,
+                                           req->ind1, req->nthreads,
+                                           req->intrinsics);
+          },
+          mtime)
+    }
+
+#ifdef Scoria_REQUIRE_TIMING
+    double bw = bw_mult / (double)mtime;
+    req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
+
+    req->r_status = Ready;
+
+    request_queue_put(queue, req);
+
+    if (stat != SCORIA_SUCCESS) {
+      controller_status(stat, req);
+    } else {
+      if (controller->chatty) {
+#ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+        double factor = 2.0;
+#else
+        double factor = 3.0;
+#endif /* SCALE_BW */
+        printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
+               "Bandwidth: %f GiB/s\n",
+               req->client, req->N, mtime, factor * bw);
+#else
+        printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
+               req->N);
+#endif /* Scoria_REQUIRE_TIMING */
+      }
+    }
+
+    return stat;
+  }
+
+  assert(req->ind1 != NULL);
+  assert(req->ind2 != NULL);
+
+  if (req->nthreads == 0) {
+    TIME(
+        {
+          stat =
+              writeadd_single_thread_2(req->output, req->input, req->N,
+                                       req->ind1, req->ind2, req->intrinsics);
+        },
+        mtime)
+  } else {
+    TIME(
+        {
+          stat = writeadd_multi_thread_2(req->output, req->input, req->N,
+                                         req->ind1, req->ind2, req->nthreads,
+                                         req->intrinsics);
+        },
+        mtime)
+  }
+
+#ifdef Scoria_REQUIRE_TIMING
+  double bw = bw_mult / (double)mtime;
+  req->nsecs = mtime;
+#endif /* Scoria_REQUIRE_TIMING */
+
+  req->r_status = Ready;
+
+  request_queue_put(queue, req);
+
+  if (stat != SCORIA_SUCCESS) {
+    controller_status(stat, req);
+  } else {
+    if (controller->chatty) {
+#ifdef Scoria_REQUIRE_TIMING
+#ifdef SCALE_BW
+      double factor = 2.0;
+#else
+      double factor = 4.0;
+#endif /* SCALE_BW */
+      printf("Controller: Client(%d) Write Data with N: %ld Time (ns): %ld "
+             "Bandwidth: %f GiB/s\n",
+             req->client, req->N, mtime, factor * bw);
+#else
+      printf("Controller: Client(%d) Write Data with N: %ld\n", req->client,
+             req->N);
+#endif /* Scoria_REQUIRE_TIMING */
+    }
+  }
+
+  return stat;
+}
+
 void *handler(void *args) {
   struct thread_args *a = args;
 
@@ -406,6 +576,11 @@ void *handler(void *args) {
       break;
     case Write:
       stat = handle_write(controller, completions, &req);
+      if (stat != SCORIA_SUCCESS)
+        quit = 1;
+      break;
+    case WriteAdd:
+      stat = handle_writeadd(controller, completions, &req);
       if (stat != SCORIA_SUCCESS)
         quit = 1;
       break;
