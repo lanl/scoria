@@ -228,7 +228,7 @@ FORCE_INLINE c_status write_single_thread_0(double *buffer, const double *input,
     return SCORIA_SUCCESS;
   } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
-      buffer[i] = input[i];
+      buffer[i] += input[i];
     }
     return SCORIA_SUCCESS;
   } else {
@@ -247,7 +247,7 @@ FORCE_INLINE c_status write_single_thread_1(double *buffer, const double *input,
     return SCORIA_SUCCESS;
   } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
-      buffer[ind1[i]] = input[i];
+      buffer[ind1[i]] += input[i];
     }
     return SCORIA_SUCCESS;
   } else {
@@ -267,7 +267,7 @@ FORCE_INLINE c_status write_single_thread_2(double *buffer, const double *input,
     return SCORIA_SUCCESS;
   } else if (intrinsic_type == NONE) {
     for (size_t i = 0; i < N; ++i) {
-      buffer[ind2[ind1[i]]] = input[i];
+      buffer[ind2[ind1[i]]] += input[i];
     }
     return SCORIA_SUCCESS;
   } else {
@@ -482,7 +482,7 @@ struct write_th_args_0 {
 void *write_th_0(void *args) {
   struct write_th_args_0 *a = args;
   for (size_t i = a->start; i < a->end; ++i) {
-    a->buffer[i] = a->input[i];
+    a->buffer[i] += a->input[i];
   }
   a->stat = SCORIA_SUCCESS;
   return NULL;
@@ -530,7 +530,7 @@ struct write_th_args_1 {
 void *write_th_1(void *args) {
   struct write_th_args_1 *a = args;
   for (size_t i = a->start; i < a->end; ++i) {
-    a->buffer[a->ind1[i]] = a->input[i];
+    a->buffer[a->ind1[i]] += a->input[i];
   }
   a->stat = SCORIA_SUCCESS;
   return NULL;
@@ -585,7 +585,7 @@ struct write_th_args_2 {
 void *write_th_2(void *args) {
   struct write_th_args_2 *a = args;
   for (size_t i = a->start; i < a->end; ++i) {
-    a->buffer[a->ind2[a->ind1[i]]] = a->input[i];
+    a->buffer[a->ind2[a->ind1[i]]] += a->input[i];
   }
   a->stat = SCORIA_SUCCESS;
   return NULL;
