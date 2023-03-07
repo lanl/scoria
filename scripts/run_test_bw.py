@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import contextlib
 import subprocess
+import time
 
 def kill_process(process):
     if process.poll() is None:
@@ -27,6 +28,8 @@ def run_test_bw(fnames, bind_options, N):
                 processes.append(stack.enter_context(subprocess.Popen(cmds)))
 
             stack.callback(kill_process, processes[-1])    
+
+            time.sleep(1)
 
         for process in processes:
             process.wait()
