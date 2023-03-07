@@ -169,7 +169,7 @@ Read and Write requests are handled asynchronously by Scoria. They can be comple
 | Simple          | Minimal client that demonstrates read/write/quit using shared memory                                                                       | client/simple           | Complete    |
 | Spatter         | Microbenchmark for timing Gather/Scatter kernels [Spatter](https://github.com/hpcgarage/spatter)                                           | client/spatter          | Complete    |
 | Minimal Spatter | Minimal Spatter client that removes argtable and other dependencies                                                                        | client/minimal\_spatter | In Progress |
-| Ume             | Coming Soon                                                                                                                                | client/ume              | In Progress |
+| Ume             | Coming Soon [Ume](https://github.com/lanl/UME)                                                                                             | client/ume              | In Progress |
 | EAPPAT          | Memory access and iterations patterns from the EAP code base with the physics removed [EAP Patterns](https://github.com/lanl/eap-patterns) | client/eappat           | Coming Soon |
 
 
