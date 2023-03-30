@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-void write_location(struct controller *controller) {
+void scoria_controller_write_location(struct controller *controller) {
   controller->shared_location->shared_mem_ptr = controller->shared_mem_ptr;
   controller->shared_location->shared_requests_list =
       controller->shared_requests_list;

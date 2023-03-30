@@ -3,6 +3,6 @@
 
 #include "controller.h"
 
-void write_location(struct controller *controller);
+void scoria_controller_write_location(struct controller *controller);
 
 #endif /* CONTROLLER_WRITE_LOCATION */

@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 
-void cleanup_shared_mem(struct controller *controller) {
+void scoria_controller_cleanup_shared_mem(struct controller *controller) {
   request_queue_list_free(controller->shared_requests_list);
   request_queue_list_free(controller->shared_completions_list);
 
@@ -33,8 +33,8 @@ void cleanup_shared_mem(struct controller *controller) {
   close(controller->fd_completions);
 }
 
-void cleanup(struct controller *controller) {
-  cleanup_shared_mem(controller);
+void scoria_controller_cleanup(struct controller *controller) {
+  scoria_controller_cleanup_shared_mem(controller);
 
   shm_destroy();
 }

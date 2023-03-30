@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-void read_location(struct client *client) {
+void scoria_client_read_location(struct client *client) {
   if (client->chatty)
     printf("Client: Waiting on Controller\n");
 

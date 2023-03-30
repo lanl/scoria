@@ -14,20 +14,20 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-void init_files() {
+void scoria_controller_init_files() {
   if (access(SHARED_MEMORY_NAME, F_OK) == 0)
     if (unlink(SHARED_MEMORY_NAME) == -1)
       scoria_error("controller:unlink:shared_memory");
 }
 
-void init_memory_pool(struct controller *controller) {
+void scoria_controller_init_memory_pool(struct controller *controller) {
   if (shm_init(SHARED_MEMORY_NAME, setup) < 0)
     scoria_error("Controller:shm_init");
 
   controller->shared_mem_ptr = shm_global();
 }
 
-void init_requests(struct controller *controller) {
+void scoria_controller_init_requests(struct controller *controller) {
   controller->fd_requests =
       scoria_sm_open(SHARED_REQUESTS_NAME, O_RDWR | O_CREAT | O_TRUNC, 0660,
                      "controller:shm_open");
@@ -44,7 +44,7 @@ void init_requests(struct controller *controller) {
            (void *)controller->shared_requests_list);
 }
 
-void init_completions(struct controller *controller) {
+void scoria_controller_init_completions(struct controller *controller) {
   controller->fd_completions =
       scoria_sm_open(SHARED_COMPLETIONS_NAME, O_RDWR | O_CREAT | O_TRUNC, 0660,
                      "controller:shm_open");
@@ -61,7 +61,8 @@ void init_completions(struct controller *controller) {
            (void *)controller->shared_completions_list);
 }
 
-void init_virtual_address_mailbox(struct controller *controller) {
+void scoria_controller_init_virtual_address_mailbox(
+    struct controller *controller) {
   controller->fd_location =
       scoria_sm_open(SHARED_LOCATION_NAME, O_RDWR | O_CREAT | O_TRUNC, 0660,
                      "controller:shm_open");
@@ -81,14 +82,14 @@ void init_virtual_address_mailbox(struct controller *controller) {
            (void *)controller->shared_location);
 }
 
-void init(struct controller *controller) {
-  init_files();
+void scoria_controller_init(struct controller *controller) {
+  scoria_controller_init_files();
 
-  init_virtual_address_mailbox(controller);
+  scoria_controller_init_virtual_address_mailbox(controller);
 
-  init_memory_pool(controller);
-  init_requests(controller);
-  init_completions(controller);
+  scoria_controller_init_memory_pool(controller);
+  scoria_controller_init_requests(controller);
+  scoria_controller_init_completions(controller);
 
-  write_location(controller);
+  scoria_controller_write_location(controller);
 }
