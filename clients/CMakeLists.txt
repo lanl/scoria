@@ -1,4 +1,4 @@
 add_subdirectory(simple)
 add_subdirectory(spatter)
-add_subdirectory(ume)
+add_subdirectory(UME)
 add_subdirectory(allocator)

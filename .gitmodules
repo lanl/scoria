@@ -1,3 +1,7 @@
 [submodule "clients/spatter/external/argtable3"]
 	path = clients/spatter/external/argtable3
 	url = https://github.com/argtable/argtable3.git
+[submodule "clients/UME"]
+	path = clients/UME
+	url = git@github.com:lanl/UME.git
+	branch = scoria
