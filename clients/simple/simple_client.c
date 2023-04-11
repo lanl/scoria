@@ -1,14 +1,6 @@
 #include <stdio.h>
 
-#include "client.h"
-#include "config.h"
-
-#include "client_cleanup.h"
-#include "client_init.h"
-#include "client_memory.h"
-#include "client_wait_requests.h"
-
-#include "shm_malloc.h"
+#include "scoria.h"
 
 void place_requests(struct client *client) {
   // Allocate Buffer
@@ -28,7 +20,7 @@ void place_requests(struct client *client) {
 
   struct request req1;
   scoria_write(client, A, 1024, input, NULL, NULL, 0, NONE, &req1);
-  wait_request(client, &req1);
+  scoria_wait_request(client, &req1);
   shm_free(input);
 
   // Read from Buffer
@@ -38,7 +30,7 @@ void place_requests(struct client *client) {
 
   struct request req2;
   scoria_read(client, A, 1024, output, NULL, NULL, 0, NONE, &req2);
-  wait_request(client, &req2);
+  scoria_wait_request(client, &req2);
 
   for (size_t i = 0; i < 1024; ++i)
     printf("%.2f ", output[i]);
@@ -52,7 +44,7 @@ void place_requests(struct client *client) {
   // struct request req3;
   // scoria_quit(client, &req3);
 
-  // wait_request(client, &req3);
+  // scoria_wait_request(client, &req3);
 }
 
 int main(int argc, char **argv) {
@@ -63,10 +55,10 @@ int main(int argc, char **argv) {
   struct client client;
   client.chatty = 0;
 
-  init(&client);
+  scoria_init(&client);
   place_requests(&client);
 
-  cleanup(&client);
+  scoria_cleanup(&client);
 
   printf("Exiting...\n");
 

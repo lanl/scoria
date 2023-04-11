@@ -6,7 +6,7 @@
 
 #include <unistd.h>
 
-void cleanup_queues(struct client *client) {
+void scoria_client_cleanup_queues(struct client *client) {
   request_queue_deactivate(client->shared_requests);
   request_queue_deactivate(client->shared_completions);
 
@@ -14,7 +14,7 @@ void cleanup_queues(struct client *client) {
   client->shared_completions = NULL;
 }
 
-void cleanup_shared_mem(struct client *client) {
+void scoria_client_cleanup_shared_mem(struct client *client) {
   scoria_sm_unmap(client->shared_location, sizeof(struct memory_location),
                   "client:unmap");
 
@@ -23,7 +23,7 @@ void cleanup_shared_mem(struct client *client) {
   close(client->fd_completions);
 }
 
-void cleanup(struct client *client) {
-  cleanup_queues(client);
-  cleanup_shared_mem(client);
+void scoria_cleanup(struct client *client) {
+  scoria_client_cleanup_queues(client);
+  scoria_client_cleanup_shared_mem(client);
 }

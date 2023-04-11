@@ -1,3 +1,6 @@
+#ifndef SCORIA_KERNELS_H
+#define SCORIA_KERNELS_H
+
 #include <assert.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -851,3 +854,5 @@ FORCE_INLINE c_status writeadd_multi_thread_2(
     return SCORIA_INTRINSIC_EXIST;
   }
 }
+
+#endif /* SCORIA_KERNELS_H */

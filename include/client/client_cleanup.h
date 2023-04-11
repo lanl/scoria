@@ -3,8 +3,8 @@
 
 #include "client.h"
 
-void cleanup_queues(struct client *client);
-void cleanup_shared_mem(struct client *client);
-void cleanup(struct client *client);
+void scoria_client_cleanup_queues(struct client *client);
+void scoria_client_cleanup_shared_mem(struct client *client);
+void scoria_cleanup(struct client *client);
 
 #endif /* CLIENT_CLEANUP */

@@ -1,13 +1,7 @@
 #include <stdio.h>
 
-#include "client.h"
-#include "client_cleanup.h"
-#include "client_init.h"
-#include "client_memory.h"
-#include "client_wait_requests.h"
-#include "config.h"
 #include "parse-args.h"
-#include "shm_malloc.h"
+#include "scoria.h"
 
 #define SP_MAX_ALLOC (65 * 1000 * 1000 * 1000)
 
@@ -65,7 +59,7 @@ int main(int argc, char **argv) {
 
   struct client client;
   client.chatty = 1;
-  init(&client);
+  scoria_init(&client);
 
   for (int i = 0; i < nrc; i++) {
     for (int j = -1; j <= (int)rc[i].nruns; j++) {
@@ -99,7 +93,7 @@ int main(int argc, char **argv) {
 
         scoria_write(&client, res, M, input, pattern, pattern_scatter, 0, NONE,
                      &req);
-        wait_request(&client, &req);
+        scoria_wait_request(&client, &req);
 
         shm_free(pattern_scatter);
         break;
@@ -116,7 +110,7 @@ int main(int argc, char **argv) {
 
         scoria_read(&client, res, M, input, pattern, pattern_gather, 0, NONE,
                     &req);
-        wait_request(&client, &req);
+        scoria_wait_request(&client, &req);
 
         shm_free(pattern_gather);
         break;
@@ -125,7 +119,7 @@ int main(int argc, char **argv) {
         printf("Scatter with Length: %d\n", N);
 
         scoria_write(&client, res, N, input, pattern, NULL, 0, NONE, &req);
-        wait_request(&client, &req);
+        scoria_wait_request(&client, &req);
 
         break;
       }
@@ -133,7 +127,7 @@ int main(int argc, char **argv) {
         printf("Gather with Length: %d\n", N);
 
         scoria_read(&client, input, N, res, pattern, NULL, 0, NONE, &req);
-        wait_request(&client, &req);
+        scoria_wait_request(&client, &req);
 
         break;
       }
@@ -149,7 +143,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  cleanup(&client);
+  scoria_cleanup(&client);
 
   return 0;
 }

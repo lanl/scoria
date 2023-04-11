@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 
-void init_memory_pool(struct client *client) {
+void scoria_client_init_memory_pool(struct client *client) {
   if (shm_init(SHARED_MEMORY_NAME, setup) < 0)
     scoria_error("Client:shm_init");
 
@@ -33,7 +33,7 @@ void init_memory_pool(struct client *client) {
   }
 }
 
-void init_requests(struct client *client) {
+void scoria_client_init_requests(struct client *client) {
   client->fd_requests =
       scoria_sm_open(SHARED_REQUESTS_NAME, O_RDWR, 0, "client:shm_open");
   client->shared_requests_list =
@@ -55,7 +55,7 @@ void init_requests(struct client *client) {
   }
 }
 
-void init_completions(struct client *client) {
+void scoria_client_init_completions(struct client *client) {
   client->fd_completions =
       scoria_sm_open(SHARED_COMPLETIONS_NAME, O_RDWR, 0, "client:shm_open");
   client->shared_completions_list =
@@ -78,7 +78,7 @@ void init_completions(struct client *client) {
   }
 }
 
-void init_virtual_address_mailbox(struct client *client) {
+void scoria_client_init_virtual_address_mailbox(struct client *client) {
   client->fd_location =
       scoria_sm_open(SHARED_LOCATION_NAME, O_RDWR, 0, "client:shm_open");
   client->shared_location = scoria_sm_map(
@@ -86,7 +86,7 @@ void init_virtual_address_mailbox(struct client *client) {
       client->fd_location, 0, "client:mmap");
 }
 
-void init_id(struct client *client) {
+void scoria_client_init_id(struct client *client) {
   int id = -1;
 
   for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -118,16 +118,16 @@ void init_id(struct client *client) {
     printf("Client: Assigned ID %d\n", client->id);
 }
 
-void init(struct client *client) {
-  init_virtual_address_mailbox(client);
+void scoria_init(struct client *client) {
+  scoria_client_init_virtual_address_mailbox(client);
 
-  read_location(client);
+  scoria_client_read_location(client);
 
-  init_memory_pool(client);
-  init_requests(client);
-  init_completions(client);
+  scoria_client_init_memory_pool(client);
+  scoria_client_init_requests(client);
+  scoria_client_init_completions(client);
 
-  init_id(client);
+  scoria_client_init_id(client);
 
   client->unmatched_requests = NULL;
 

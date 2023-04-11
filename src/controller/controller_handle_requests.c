@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 
-void controller_status(c_status stat, struct request *req) {
+void scoria_controller_status(c_status stat, struct request *req) {
   switch (stat) {
   case SCORIA_SUCCESS:
     printf("Controller: Client(%d): Error: No error\n", req->client);
@@ -44,8 +44,9 @@ void controller_status(c_status stat, struct request *req) {
   }
 }
 
-c_status handle_read(struct controller *controller, struct request_queue *queue,
-                     struct request *req) {
+c_status scoria_controller_handle_read(struct controller *controller,
+                                       struct request_queue *queue,
+                                       struct request *req) {
   if (controller->chatty)
     printf("Controller: Received Request Object: Client: %d ID: %d Type: %d N: "
            "%ld\n",
@@ -87,7 +88,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     request_queue_put(queue, req);
 
     if (stat != SCORIA_SUCCESS) {
-      controller_status(stat, req);
+      scoria_controller_status(stat, req);
     } else {
       if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -137,7 +138,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
     request_queue_put(queue, req);
 
     if (stat != SCORIA_SUCCESS) {
-      controller_status(stat, req);
+      scoria_controller_status(stat, req);
     } else {
       if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -187,7 +188,7 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
   request_queue_put(queue, req);
 
   if (stat != SCORIA_SUCCESS) {
-    controller_status(stat, req);
+    scoria_controller_status(stat, req);
   } else {
     if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -208,8 +209,9 @@ c_status handle_read(struct controller *controller, struct request_queue *queue,
   return stat;
 }
 
-c_status handle_write(struct controller *controller,
-                      struct request_queue *queue, struct request *req) {
+c_status scoria_controller_handle_write(struct controller *controller,
+                                        struct request_queue *queue,
+                                        struct request *req) {
   if (controller->chatty)
     printf("Controller: Received Request Object: Client: %d ID: %d Type: %d "
            "Pointer: %p Input Pointer: %p N: %ld\n",
@@ -252,7 +254,7 @@ c_status handle_write(struct controller *controller,
     request_queue_put(queue, req);
 
     if (stat != SCORIA_SUCCESS) {
-      controller_status(stat, req);
+      scoria_controller_status(stat, req);
     } else {
       if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -303,7 +305,7 @@ c_status handle_write(struct controller *controller,
     request_queue_put(queue, req);
 
     if (stat != SCORIA_SUCCESS) {
-      controller_status(stat, req);
+      scoria_controller_status(stat, req);
     } else {
       if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -355,7 +357,7 @@ c_status handle_write(struct controller *controller,
   request_queue_put(queue, req);
 
   if (stat != SCORIA_SUCCESS) {
-    controller_status(stat, req);
+    scoria_controller_status(stat, req);
   } else {
     if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -377,8 +379,9 @@ c_status handle_write(struct controller *controller,
   return stat;
 }
 
-c_status handle_writeadd(struct controller *controller,
-                         struct request_queue *queue, struct request *req) {
+c_status scoria_controller_handle_writeadd(struct controller *controller,
+                                           struct request_queue *queue,
+                                           struct request *req) {
   if (controller->chatty)
     printf("Controller: Received Request Object: Client: %d ID: %d Type: %d "
            "Pointer: %p Input Pointer: %p N: %ld\n",
@@ -421,7 +424,7 @@ c_status handle_writeadd(struct controller *controller,
     request_queue_put(queue, req);
 
     if (stat != SCORIA_SUCCESS) {
-      controller_status(stat, req);
+      scoria_controller_status(stat, req);
     } else {
       if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -472,7 +475,7 @@ c_status handle_writeadd(struct controller *controller,
     request_queue_put(queue, req);
 
     if (stat != SCORIA_SUCCESS) {
-      controller_status(stat, req);
+      scoria_controller_status(stat, req);
     } else {
       if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -525,7 +528,7 @@ c_status handle_writeadd(struct controller *controller,
   request_queue_put(queue, req);
 
   if (stat != SCORIA_SUCCESS) {
-    controller_status(stat, req);
+    scoria_controller_status(stat, req);
   } else {
     if (controller->chatty) {
 #ifdef Scoria_REQUIRE_TIMING
@@ -547,8 +550,8 @@ c_status handle_writeadd(struct controller *controller,
   return stat;
 }
 
-void *handler(void *args) {
-  struct thread_args *a = args;
+void *scoria_controller_req_handler(void *args) {
+  struct scoria_controller_handler_args *a = args;
 
   int quit = 0;
   int tid = a->id;
@@ -570,17 +573,17 @@ void *handler(void *args) {
 
     switch (req.r_type) {
     case Read:
-      stat = handle_read(controller, completions, &req);
+      stat = scoria_controller_handle_read(controller, completions, &req);
       if (stat != SCORIA_SUCCESS)
         quit = 1;
       break;
     case Write:
-      stat = handle_write(controller, completions, &req);
+      stat = scoria_controller_handle_write(controller, completions, &req);
       if (stat != SCORIA_SUCCESS)
         quit = 1;
       break;
     case WriteAdd:
-      stat = handle_writeadd(controller, completions, &req);
+      stat = scoria_controller_handle_writeadd(controller, completions, &req);
       if (stat != SCORIA_SUCCESS)
         quit = 1;
       break;
@@ -619,16 +622,17 @@ void *handler(void *args) {
   return NULL;
 }
 
-void handle_requests(struct controller *controller) {
+void scoria_controller_handle_requests(struct controller *controller) {
   // Start loop
   pthread_t threads[MAX_CLIENTS];
-  struct thread_args args[MAX_CLIENTS];
+  struct scoria_controller_handler_args args[MAX_CLIENTS];
 
   for (int i = 0; i < MAX_CLIENTS; ++i) {
     args[i].id = i;
     args[i].controller = controller;
 
-    int ret = pthread_create(&threads[i], NULL, handler, &args[i]);
+    int ret = pthread_create(&threads[i], NULL, scoria_controller_req_handler,
+                             &args[i]);
     (void)ret;
     assert(ret == 0);
   }

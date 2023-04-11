@@ -15,10 +15,10 @@ int main(int argc, char **argv) {
   struct controller controller;
   controller.chatty = 1;
 
-  init(&controller);
-  handle_requests(&controller);
+  scoria_controller_init(&controller);
+  scoria_controller_handle_requests(&controller);
 
-  cleanup(&controller);
+  scoria_controller_cleanup(&controller);
 
   printf("Exiting...\n");
 

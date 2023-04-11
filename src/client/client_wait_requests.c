@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-void wait_request(struct client *client, struct request *req) {
+void scoria_wait_request(struct client *client, struct request *req) {
   if (client->chatty)
     printf("Client(%d): Waiting on Request %d:%d\n", client->id, req->client,
            req->id);
@@ -55,8 +55,8 @@ void wait_request(struct client *client, struct request *req) {
            req->client, id);
 }
 
-void wait_requests(struct client *client, struct request *reqs,
-                   size_t num_reqs) {
+void scoria_wait_requests(struct client *client, struct request *reqs,
+                          size_t num_reqs) {
   for (size_t i = 0; i < num_reqs; ++i)
-    wait_request(client, &reqs[i]);
+    scoria_wait_request(client, &reqs[i]);
 }

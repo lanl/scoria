@@ -3,7 +3,7 @@
 
 #include "controller.h"
 
-void cleanup_shared_mem(struct controller *controller);
-void cleanup(struct controller *controller);
+void scoria_controller_cleanup_shared_mem(struct controller *controller);
+void scoria_controller_cleanup(struct controller *controller);
 
 #endif /* CONTROLLER_CLEANUP */

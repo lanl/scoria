@@ -3,6 +3,6 @@
 
 #include "client.h"
 
-void read_location(struct client *client);
+void scoria_client_read_location(struct client *client);
 
 #endif /* CLIENT_READ_LOCATION */

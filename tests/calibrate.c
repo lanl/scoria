@@ -6,16 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "client.h"
-#include "client_cleanup.h"
-#include "client_init.h"
-#include "client_memory.h"
-#include "client_wait_requests.h"
-#include "config.h"
 #include "kernels.h"
-#include "mytimer.h"
-#include "request.h"
-#include "shm_malloc.h"
+#include "scoria.h"
 
 #ifdef SINGLE_ALLOC
 double *res, *input, *buffer, *data;
@@ -89,7 +81,7 @@ double *read_data(const double *buffer, size_t N, const size_t *ind1,
       {
         scoria_read(&client, buffer, N, res, ind1, ind2, num_threads,
                     intrinsics, &read_req);
-        wait_request(&client, &read_req);
+        scoria_wait_request(&client, &read_req);
       },
       *elapsed_ns)
   *internal_ns += read_req.nsecs;
@@ -147,7 +139,7 @@ void write_data(double *buffer, size_t N, const double *input,
       {
         scoria_write(&client, buffer, N, input, ind1, ind2, num_threads,
                      intrinsics, &write_req);
-        wait_request(&client, &write_req);
+        scoria_wait_request(&client, &write_req);
       },
       *elapsed_ns)
   *internal_ns += write_req.nsecs;
@@ -679,7 +671,7 @@ int main(int argc, char **argv) {
   printf("Running using the memory controller, which must be started "
          "before this executable is run\n");
   client.chatty = 0;
-  init(&client);
+  scoria_init(&client);
 #else
   printf("Running tests WITHOUT using the memory controller\n");
 #endif
@@ -722,9 +714,9 @@ int main(int argc, char **argv) {
   // send quit request
   struct request quit_req;
   scoria_quit(&client, &quit_req);
-  wait_request(&client, &quit_req);
+  scoria_wait_request(&client, &quit_req);
 
-  cleanup(&client);
+  scoria_cleanup(&client);
 #endif
 
 #ifdef SINGLE_ALLOC

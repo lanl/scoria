@@ -4,8 +4,8 @@
 #include "client.h"
 #include "request.h"
 
-void wait_request(struct client *client, struct request *req);
-void wait_requests(struct client *client, struct request *reqs,
-                   size_t num_reqs);
+void scoria_wait_request(struct client *client, struct request *req);
+void scoria_wait_requests(struct client *client, struct request *reqs,
+                          size_t num_reqs);
 
 #endif /* CLIENT_WAIT_REQUESTS */
