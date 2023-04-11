@@ -15,6 +15,10 @@ Client/Controller design to service sparse memory requests (0, 1, and 2 levels o
 - C and C++ compilers
 - OpenMP (for calibration test)
 - Python3 (for scripts)
+- MPI (for use with Ume client)
+
+### Submodules
+- [Ume](https://github.com/lanl/UME) 
 
 ### Dependencies
 
@@ -38,7 +42,24 @@ cmake ..
 make
 ```
 
+### Full Build with Ume Serial and Ume MPI
+
+```
+git clone git@github.com:lanl/scoria.git
+cd scoria
+mkdir build
+cd build
+cmake -DUSE_MPI=ON ..
+make
+```
+
 ### CMake Keywords
+
+#### Ume
+|        Option        |                Description                | Default |    Status    | Compile Definitions (Pre-Processor) |
+| -------------------- | ----------------------------------------- | ------- | ------------ | ----------------------------------- |
+| USE\_MPI             | Build with MPI                            | OFF     | Complete     |                                     |
+
 
 #### Intrinsics
 
@@ -120,25 +141,17 @@ Under the `tests` directory in the build directory, there are four executables. 
 To add your own clients, use [clients/simple/simple\_client.c](https://github.com/lanl/scoria/blob/main/clients/simple/simple_client.c) as a starting point. At a minimum you will need to intialize and cleanup the client as follows:
 
 ```
-#include "client.h"
-#include "config.h"
-
-#include "client_cleanup.h"
-#include "client_init.h"
-#include "client_memory.h"
-#include "client_wait_requests.h"
-
-#include "shm_malloc.h"
+#include "scoria.h"
 
 int main(int argc, char **argv) {
   struct client client;
   client.chatty = 0;
 
-  init(&client);
+  scoria_init(&client);
 
   // Your code here  
 
-  cleanup(&client);
+  scoria_cleanup(&client);
   return 0;
 }
 ```
@@ -169,7 +182,7 @@ Read and Write requests are handled asynchronously by Scoria. They can be comple
 | Simple          | Minimal client that demonstrates read/write/quit using shared memory                                                                       | client/simple           | Complete    |
 | Spatter         | Microbenchmark for timing Gather/Scatter kernels [Spatter](https://github.com/hpcgarage/spatter)                                           | client/spatter          | Complete    |
 | Minimal Spatter | Minimal Spatter client that removes argtable and other dependencies                                                                        | client/minimal\_spatter | In Progress |
-| Ume             | Coming Soon [Ume](https://github.com/lanl/UME)                                                                                             | client/ume              | In Progress |
+| Ume             | Flag Proxy which attempts to capture memory access patterns, kernels, and mesh structure  [Ume](https://github.com/lanl/UME)               | client/ume              | Complete    |
 | EAPPAT          | Memory access and iterations patterns from the EAP code base with the physics removed [EAP Patterns](https://github.com/lanl/eap-patterns) | client/eappat           | Coming Soon |
 
 
