@@ -191,7 +191,7 @@ Read and Write requests are handled asynchronously by Scoria. They can be comple
 ### Examples
 Terminal window 1
 ```
-./controller
+./scoria
 ```
 
 Terminal window 2
@@ -203,12 +203,12 @@ On nodes with multiple CPU sockets, bandwidth can be drastically reduced if the 
 
 Terminal window 1
 ```
-hwloc-bind node:0 ./controller
+hwloc-bind node:0 ./scoria
 ```
 
 Terminal window 2
 ```
-hwloc-bind node:0 ./tests/test_client
+hwloc-bind node:0 ./tests/test_client 1048576
 ```
 
 ### Scripts
