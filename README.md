@@ -59,6 +59,7 @@ make
 |        Option        |                Description                | Default |    Status    | Compile Definitions (Pre-Processor) |
 | -------------------- | ----------------------------------------- | ------- | ------------ | ----------------------------------- |
 | USE\_MPI             | Build with MPI                            | OFF     | Complete     |                                     |
+| UME\_PROFILING       | Build with Profiling Enabled              | OFF     | Complete     | UME\_PROFILING                      |
 
 
 #### Intrinsics
