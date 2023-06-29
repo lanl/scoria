@@ -239,7 +239,7 @@ hwloc-bind node:0 ./scoria
 
 Terminal window 2
 ```
-hwloc-bind node:0 ./tests/test_client
+hwloc-bind node:0 ./tests/test_client 1048576
 ```
 
 ### Scripts
