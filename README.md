@@ -16,6 +16,7 @@ Client/Controller design to service sparse memory requests (0, 1, and 2 levels o
 - OpenMP (for calibration test)
 - Python3 (for scripts)
 - MPI (for use with Ume client)
+- Caliper (for profiling Ume client)
 
 ### Submodules
 - [Ume](https://github.com/lanl/UME) 
@@ -59,8 +60,7 @@ make
 |        Option        |                Description                | Default |    Status    | Compile Definitions (Pre-Processor) |
 | -------------------- | ----------------------------------------- | ------- | ------------ | ----------------------------------- |
 | USE\_MPI             | Build with MPI                            | OFF     | Complete     |                                     |
-| UME\_PROFILING       | Build with Profiling Enabled              | OFF     | Complete     | UME\_PROFILING                      |
-
+| USE\_CALIPER         | Build with Caliper                        | OFF     | Complete     |                                     |
 
 #### Intrinsics
 
@@ -121,6 +121,36 @@ Build Scoria with bandwidth and calibration tests and clients with AVX intrinsic
 cmake -DScoria_REQUIRE_CALIBRATION_TESTS=ON -DScoria_REQUIRE_AVX=ON -DScoria_REQUIRE_TIMING=ON -DScoria_SCALE_BW=ON -DMAX_CLIENTS=4 ..
 make
 ```
+
+Build UME with AVX Extension and Scoria 
+```
+cmake -DUSE_MPI=ON -DUSE_CALIPER -DREQUIRE_AVX
+make
+```
+
+The `ume_mpi` and `ume_serial` executables should be in the clients/UME/src directory
+
+Build UME + Scoria with Caliper Profiling and AVX
+```
+mkdir caliper_build
+cd caliper_build
+cmake -DUSE_CALIPER=ON -DUSE_MPI=ON -DScoria_REQUIRE_AVX=ON ..
+make
+```
+
+The `ume_mpi` and `ume_serial` executables should be in the clients/UME/src directory
+
+Build baseline (non-scoria) UME for Caliper profiling without AVX
+```
+cd clients/UME
+mkdir caliper_build
+cd caliper_build
+cmake  -DUSE_CALIPER=ON -DUSE_MPI=ON ../
+make
+```
+
+The `ume_mpi` and `ume_serial` executables should be in the src directory
+
 
 The `test`, `test_clients`, `test_calibration`, and `test_calibration_client` executables should be in the `tests` directory, the `simple_client` and `spatter` executables should be in the `clients` directory, along with the `scoria` executable in the base build directory. The `test_clients` and `test_calibration_client` executables, when ran with the `scoria` controller, should now output both internal and external bandwidth measurements and timings.
 
@@ -209,14 +239,14 @@ hwloc-bind node:0 ./scoria
 
 Terminal window 2
 ```
-hwloc-bind node:0 ./tests/test_client 1048576
+hwloc-bind node:0 ./tests/test_client
 ```
 
 ### Scripts
 
 **Note: To use the scripts, Scoria must have been built without internal timing, i.e. `-DScoria_REQUIRE_TIMING=OFF`**
 
-The `scripts/simple_test_bw.py` contains a script to launch both Scoria and the test client. It is configurable with the following options:
+`scripts/simple_test_bw.py` contains a script to launch both Scoria and the test client. It is configurable with the following options:
 
 | Short Option | Long Option  |                Description                 |  Default   |
 | ------------ | -----------  | ------------------------------------------ | ---------- |
@@ -228,12 +258,31 @@ The `scripts/simple_test_bw.py` contains a script to launch both Scoria and the 
 
 The output will be a log file with the bandwidth data and bar charts of the bandwidth for each test at each thread count. If AVX or SVE is enabled, those results will be saved to an individual figure with the appropriate name.
 
+`scripts/scoria-vs-ume.sh` contains a script to build Ume + Scoria with AVX and Caliper enabled, and to build a standalone Ume executable with Caliper. It then runs both with an Ume input file of your choosing and with the specified number of ranks, and outputs profiling data in the form of a text file or a JSON file that can be read by Hatchet. It is configurable with the following options:
+
+| Short Option |                      Description                    |               Default             |
+| ------------ | --------------------------------------------------- | --------------------------------- |
+| -c           | (Optional) CALI\_CONFIG setting                     | runtime-report(output=report.log) |
+| -f           | Absolute path to Input Deck for Ume                 | None                              |
+| -n           | (Optional) Number of ranks to use to launch MPI run | 1                                 |
+| -s           | (Optional) Scoria root directory                    | pwd                               |
+| -p           | (Optional) List of PAPI Counters to collect         | None                              |
+
 #### Example
 
 ```
 cd scoria
 python3 scripts/simple_test_bw.py -l output.log -p scoria.png -n 8388608 -s node:0 -b node:0
 ```
+
+```
+bash scripts/scoria-vs-ume.sh -c "hatchet-region-profile" -n <num-ranks> -f <absolute-path-to-input-deck>
+```
+
+```
+bash scripts/scoria-vs-ume.sh  -n <num-ranks> -f <absolute-path-to-input-deck>  -p "PAPI_DP_OPS,PAPI_TOT_CYC,PAPI_TOT_INS,PAPI_LD_INS,PAPI_SR_INS,PAPI_BR_INS,PAPI_LST_INS"
+```
+
 
 ## License
 
@@ -244,3 +293,4 @@ Triad National Security, LLC (Triad) owns the copyright to Scoria. The license i
 ## Authors and acknowledgment
 - Jered Dominguez-Trujillo, [_jereddt@lanl.gov_](mailto:jereddt@lanl.gov)
 - Jonas Lippuner, [_jonas@l2quant.com_](mailto:jonas@l2quant.com) [_jlippuner@lanl.gov_](mailto:jlippuner@lanl.gov)
+- Neel Patel, [_nmpatel@lanl.gov_](mailto:nmpatel@lanl.gov) [_nmpatel@kansas.edu_](mailto:nmpatel@kansas.edu)
