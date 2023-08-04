@@ -12,7 +12,7 @@ Client/Controller design to service sparse memory requests (0, 1, and 2 levels o
 
 ### Pre-Requisites
 - CMake (Version >= 3.12)
-- C and C++ compilers
+- C and C++ compilers (C++ compiler must support C++ 20 for the UME submodule, i.e. gcc 12.2.0 or newer)
 - OpenMP (for calibration test)
 - Python3 (for scripts)
 - MPI (for use with Ume client)
