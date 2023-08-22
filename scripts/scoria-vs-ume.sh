@@ -60,7 +60,7 @@ ume_mpi=$UME_BUILD/src/ume_mpi
 
 # Ume + Scoria
 cd $SCORIA_BUILD
-cmake -DUSE_CALIPER=ON -DScoria_REQUIRE_AVX=ON -DUSE_MPI=ON ../
+cmake -DUSE_CALIPER=ON -DScoria_REQUIRE_AVX=ON -DUSE_MPI=ON -DCMAKE_BUILD_TYPE=Release ../
 make -j
 
 RELINPUT=`realpath --relative-to=${PWD} $INPUT`
@@ -68,7 +68,7 @@ mpirun -n $RANKS $scoria_ume_mpi $RELINPUT
 
 # Ume
 cd $UME_BUILD
-cmake -DUSE_CALIPER=ON -DUSE_MPI=ON ../
+cmake -DUSE_CALIPER=ON -DUSE_MPI=ON -DCMAKE_BUILD_TYPE=Release ../
 make -j
 
 RELINPUT=`realpath --relative-to=${PWD} $INPUT`
