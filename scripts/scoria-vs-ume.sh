@@ -72,4 +72,4 @@ cmake -DUSE_CALIPER=ON -DUSE_MPI=ON -DCMAKE_BUILD_TYPE=Release ../
 make -j
 
 RELINPUT=`realpath --relative-to=${PWD} $INPUT`
-mpirun -n $RANKS $ume_mpi $RELINPUT
+mpirun --bind-to core -n $RANKS $ume_mpi $RELINPUT
