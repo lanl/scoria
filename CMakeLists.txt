@@ -10,7 +10,7 @@ add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function -Wno-strict-pro
 
 if(Scoria_REQUIRE_AVX)
   message(STATUS "Building with AVX support")
-  add_compile_options(-mavx512f)
+  add_compile_options(-mavx -mavx2 -mavx512f)
 else()
   message(STATUS "Building without AVX suppoort")
 endif()
