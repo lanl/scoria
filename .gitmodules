@@ -8,6 +8,8 @@
 [submodule "clients/eap-patterns"]
 	path = clients/eap-patterns
 	url = git@github.com:JDTruj2018/eap-patterns.git
+	branch = scoria
 [submodule "clients/parthenon"]
 	path = clients/parthenon
 	url = git@github.com:JDTruj2018/parthenon.git
+	branch = scoria
