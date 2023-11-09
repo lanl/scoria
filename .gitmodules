@@ -5,3 +5,6 @@
 	path = clients/UME
 	url = git@github.com:lanl/UME.git
 	branch = scoria
+[submodule "clients/eap-patterns"]
+	path = clients/eap-patterns
+	url = git@github.com:JDTruj2018/eap-patterns.git
